@@ -1,0 +1,2388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KrisFlyer Miles Tracker</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg:#0b0f1a; --surface:#111827; --surface2:#1a2235; --border:#1e2d45; --border2:#253550;
+    --accent:#0ea5e9; --accent2:#38bdf8; --gold:#f59e0b; --gold2:#fbbf24;
+    --green:#10b981; --red:#ef4444; --orange:#f97316;
+    --text:#e2e8f0; --text2:#94a3b8; --text3:#64748b;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14px;min-height:100vh;}
+
+  /* NAV */
+  .nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;}
+  .nav-brand{font-family:var(--mono);font-size:15px;font-weight:600;color:var(--accent2);letter-spacing:-.3px;}
+  .nav-brand span{color:var(--text3);font-weight:400;}
+  .nav-tabs{display:flex;gap:4px;}
+  .nav-tab{padding:6px 14px;border-radius:6px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);border:none;background:none;transition:all .15s;}
+  .nav-tab:hover{color:var(--text);background:var(--surface2);}
+  .nav-tab.active{color:var(--accent2);background:rgba(14,165,233,.12);}
+  .nav-right{display:flex;gap:8px;align-items:center;}
+
+  /* PERSON SWITCHER */
+  .person-switcher{display:flex;align-items:center;gap:0;border:1px solid var(--border2);border-radius:8px;overflow:hidden;}
+  .person-btn{padding:5px 14px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;font-family:var(--sans);white-space:nowrap;}
+  .person-btn:hover{color:var(--text);background:var(--surface2);}
+  .person-btn.p0.active{background:var(--accent2);color:#0b0f1a;}
+  .person-btn.p1.active{background:#a78bfa;color:#0b0f1a;}
+  .person-btn.p2.active{background:#34d399;color:#0b0f1a;}
+  .person-btn.p3.active{background:#fb923c;color:#0b0f1a;}
+  .person-divider{width:1px;height:24px;background:var(--border2);}
+  .person-edit-btn{padding:5px 8px;font-size:11px;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;font-family:var(--sans);}
+  .person-edit-btn:hover{color:var(--text);}
+  .person-btn.all-active{background:var(--surface2);color:var(--text);font-weight:700;}
+  .person-add-btn{padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--text3);transition:all .15s;font-family:var(--sans);}
+  .person-add-btn:hover{color:var(--accent2);}
+
+  /* PERSON COLOR VARS */
+  .pc-0{color:var(--accent2)!important;}
+  .pc-1{color:#a78bfa!important;}
+  .pc-2{color:#34d399!important;}
+  .pc-3{color:#fb923c!important;}
+  .pb-0{background:var(--accent2);}
+  .pb-1{background:#a78bfa;}
+  .pb-2{background:#34d399;}
+  .pb-3{background:#fb923c;}
+
+  /* BUTTONS */
+  .btn{padding:6px 14px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer;border:none;transition:all .15s;font-family:var(--sans);}
+  .btn-primary{background:var(--accent);color:#fff;}
+  .btn-primary:hover{background:var(--accent2);}
+  .btn-ghost{background:var(--surface2);color:var(--text2);border:1px solid var(--border2);}
+  .btn-ghost:hover{color:var(--text);}
+  .btn-sm{padding:4px 10px;font-size:12px;}
+  .btn-danger{background:rgba(239,68,68,.15);color:var(--red);border:1px solid rgba(239,68,68,.3);}
+  .btn-danger:hover{background:rgba(239,68,68,.25);}
+  .btn-success{background:rgba(16,185,129,.15);color:var(--green);border:1px solid rgba(16,185,129,.3);}
+  .btn-success:hover{background:rgba(16,185,129,.25);}
+
+  /* LAYOUT */
+  .main{max-width:1440px;margin:0 auto;padding:24px;}
+
+  /* PERSON SECTION WRAPPER */
+  .person-section{margin-bottom:40px;}
+  .person-section-header{display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .person-name-badge{font-size:16px;font-weight:700;letter-spacing:-.2px;}
+  .person-section-divider{height:2px;background:linear-gradient(90deg,rgba(14,165,233,.4),transparent);border-radius:2px;flex:1;}
+
+  /* STAT CARDS */
+  .stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:22px;}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;position:relative;overflow:hidden;}
+  .stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
+  .stat-card.blue::before{background:linear-gradient(90deg,var(--accent),transparent);}
+  .stat-card.red::before{background:linear-gradient(90deg,var(--red),transparent);}
+  .stat-card.green::before{background:linear-gradient(90deg,var(--green),transparent);}
+  .stat-card.purple::before{background:linear-gradient(90deg,#a78bfa,transparent);}
+  .stat-card.gold::before{background:linear-gradient(90deg,var(--gold),transparent);}
+  .stat-label{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;}
+  .stat-value{font-family:var(--mono);font-size:26px;font-weight:600;line-height:1;}
+  .stat-value.blue{color:var(--accent2);}
+  .stat-value.red{color:var(--red);}
+  .stat-value.green{color:var(--green);}
+  .stat-value.purple{color:#a78bfa;}
+  .stat-value.gold{color:var(--gold2);}
+  .stat-sub{font-size:12px;color:var(--text3);margin-top:5px;}
+
+  /* SECTION HEADER */
+  .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+  .section-title{font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:7px;}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);flex-shrink:0;}
+
+  /* FILTERS */
+  .filters{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center;}
+  .filter-label{font-size:12px;color:var(--text3);}
+  select,input[type="text"],input[type="number"],input[type="date"],input[type="month"]{
+    background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+    color:var(--text);padding:6px 10px;font-size:13px;font-family:var(--sans);outline:none;transition:border .15s;}
+  select:focus,input:focus{border-color:var(--accent);}
+  select option{background:var(--surface2);}
+
+  /* TABLE BASE */
+  .table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:20px;}
+  table{width:100%;border-collapse:collapse;}
+  thead tr{background:var(--surface2);border-bottom:1px solid var(--border);}
+  th{padding:9px 13px;text-align:left;font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;white-space:nowrap;}
+  td{padding:11px 13px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;}
+  tr:last-child td{border-bottom:none;}
+  tbody tr:hover{background:rgba(255,255,255,.02);}
+  .mono{font-family:var(--mono);}
+
+  /* BANK-GROUPED TABLE */
+  .bank-group{margin-bottom:18px;}
+  .bank-header{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--surface2);border:1px solid var(--border2);border-radius:10px 10px 0 0;cursor:pointer;user-select:none;}
+  .bank-header.closed{border-radius:10px;}
+  .bank-header:hover{background:#1e2a3e;}
+  .bank-header-left{display:flex;align-items:center;gap:11px;}
+  .bank-pill{font-size:12px;font-weight:700;letter-spacing:.4px;padding:3px 11px;border-radius:20px;font-family:var(--mono);}
+  .bp-uob{background:rgba(220,38,38,.18);color:#f87171;border:1px solid rgba(220,38,38,.3);}
+  .bp-dbs{background:rgba(220,38,38,.18);color:#f87171;border:1px solid rgba(220,38,38,.3);}
+  .bp-citi{background:rgba(59,130,246,.18);color:#93c5fd;border:1px solid rgba(59,130,246,.3);}
+  .bp-hsbc{background:rgba(239,68,68,.15);color:#fca5a5;border:1px solid rgba(239,68,68,.25);}
+  .bp-ocbc{background:rgba(249,115,22,.18);color:#fdba74;border:1px solid rgba(249,115,22,.3);}
+  .bp-amex{background:rgba(16,185,129,.15);color:#6ee7b7;border:1px solid rgba(16,185,129,.25);}
+  .bp-scb{background:rgba(139,92,246,.18);color:#c4b5fd;border:1px solid rgba(139,92,246,.3);}
+  .bp-maybank{background:rgba(234,179,8,.18);color:#fde047;border:1px solid rgba(234,179,8,.3);}
+  .bp-other{background:rgba(100,116,139,.2);color:var(--text2);border:1px solid var(--border2);}
+
+  .bank-summary{display:flex;align-items:center;gap:22px;}
+  .bank-stat{text-align:right;}
+  .bank-stat-val{font-family:var(--mono);font-size:13px;font-weight:600;}
+  .bank-stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;}
+  .chevron{color:var(--text3);font-size:10px;margin-left:6px;transition:transform .2s;display:inline-block;}
+  .chevron.open{transform:rotate(180deg);}
+
+  .bank-body{border:1px solid var(--border2);border-top:none;border-radius:0 0 10px 10px;overflow:hidden;}
+
+  /* POOL ROW */
+  .pool-row td{background:rgba(14,165,233,.04);border-bottom:1px solid var(--border);}
+  .pool-row td:first-child{padding-left:16px;}
+  .pool-label{font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+
+  /* CARD SUB-ROWS */
+  .card-row td:first-child{padding-left:32px;}
+  .card-row td{background:transparent;}
+  .card-indent{display:flex;align-items:center;gap:6px;}
+  .card-indent::before{content:'';width:12px;height:1px;background:var(--border2);flex-shrink:0;}
+
+  .bank-add-row{padding:9px 13px;border-top:1px solid var(--border);background:rgba(255,255,255,.01);}
+
+  /* BADGES */
+  .badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;white-space:nowrap;}
+  .b-blue{background:rgba(14,165,233,.15);color:var(--accent2);}
+  .b-gold{background:rgba(245,158,11,.15);color:var(--gold2);}
+  .b-green{background:rgba(16,185,129,.15);color:var(--green);}
+  .b-red{background:rgba(239,68,68,.15);color:var(--red);}
+  .b-orange{background:rgba(249,115,22,.15);color:var(--orange);}
+  .b-gray{background:rgba(100,116,139,.2);color:var(--text3);}
+  .b-purple{background:rgba(167,139,250,.15);color:#a78bfa;}
+
+  /* PROGRESS BAR */
+  .prog{width:100%;background:var(--surface2);border-radius:3px;height:5px;overflow:hidden;}
+  .prog-bar{height:100%;border-radius:3px;}
+
+  /* ALERTS */
+  .alerts-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px;}
+  .alert-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .alert-item{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .alert-item:last-child{border-bottom:none;padding-bottom:0;}
+  .alert-icon{width:26px;height:26px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+  .ai-warn{background:rgba(249,115,22,.15);}
+  .ai-danger{background:rgba(239,68,68,.15);}
+  .ai-info{background:rgba(14,165,233,.12);}
+  .alert-title{font-size:13px;font-weight:500;}
+  .alert-sub{font-size:11px;color:var(--text3);margin-top:2px;}
+
+  /* MODAL */
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:26px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;}
+  .modal h2{font-size:16px;font-weight:600;margin-bottom:18px;}
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:13px;}
+  .form-group{display:flex;flex-direction:column;gap:5px;}
+  .fg-full{grid-column:1/-1;}
+  .form-group label{font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;}
+  .form-group input,.form-group select{width:100%;}
+  .modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;}
+
+  /* INLINE EDIT */
+  .inline-edit{border:1px solid transparent;background:transparent;color:var(--text);border-radius:4px;padding:2px 6px;width:100px;font-family:var(--mono);font-size:13px;}
+  .inline-edit:focus{border-color:var(--accent);background:var(--surface2);outline:none;}
+
+  /* TAB CONTENT */
+  .tab-content{display:none;}
+  .tab-content.active{display:block;}
+
+  /* EMPTY STATE */
+  .empty{text-align:center;padding:32px;color:var(--text3);font-size:13px;}
+  .empty .icon{font-size:28px;margin-bottom:6px;}
+
+  /* FEE COUNTDOWN */
+  .fee-countdown{font-family:var(--mono);font-size:12px;}
+  .fc-soon{color:var(--red);}
+  .fc-mid{color:var(--orange);}
+  .fc-ok{color:var(--text3);}
+
+  /* FEE TICKER */
+  .fee-ticker-wrap{overflow:hidden;position:relative;height:18px;margin-top:6px;}
+  .fee-ticker{display:flex;gap:0;white-space:nowrap;animation:ticker-scroll 18s linear infinite;}
+  .fee-ticker:hover{animation-play-state:paused;}
+  .fee-ticker-item{display:inline-flex;align-items:center;gap:5px;padding:0 14px;font-size:11px;font-family:var(--mono);}
+  .fee-ticker-item.urgent{color:var(--red);}
+  .fee-ticker-item.mid{color:var(--orange);}
+  .fee-ticker-item.ok{color:var(--text3);}
+  .fee-ticker-sep{color:var(--border2);padding:0 2px;}
+  @keyframes ticker-scroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+  /* MILES BUBBLE */
+  .miles-bubble{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:linear-gradient(135deg,rgba(14,165,233,.18),rgba(56,189,248,.08));border:1px solid rgba(14,165,233,.35);border-radius:12px;padding:6px 14px;min-width:120px;}
+  .miles-bubble-val{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent2);line-height:1.1;}
+  .miles-bubble-label{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.7px;margin-top:2px;}
+  .miles-bubble-sub{font-size:10px;color:var(--text3);margin-top:1px;}
+  .bp-krisflyer{background:rgba(14,165,233,.2);color:var(--accent2);border:1px solid rgba(14,165,233,.4);}
+  .kf-row td{background:rgba(14,165,233,.05);}
+
+  /* CONVERSION RATIO BADGE */
+  .ratio-badge{display:inline-flex;align-items:center;gap:3px;background:rgba(14,165,233,.08);border:1px solid rgba(14,165,233,.2);border-radius:4px;padding:2px 7px;font-family:var(--mono);font-size:11px;color:var(--accent2);}
+  .ratio-badge .ratio-arrow{color:var(--text3);font-size:10px;}
+
+  /* PERSON SECTION SEPARATOR */
+  .person-sep{margin:32px 0;border:none;border-top:2px dashed var(--border);opacity:.5;}
+
+  /* RESPONSIVE */
+  @media(max-width:900px){
+    .stats-grid{grid-template-columns:1fr 1fr;}
+    .alerts-grid{grid-template-columns:1fr;}
+    .form-grid{grid-template-columns:1fr;}
+    .nav-tabs{display:none;}
+    .bank-summary{gap:12px;}
+  }
+  @media(max-width:600px){
+    .stats-grid{grid-template-columns:1fr;}
+    .main{padding:12px;}
+    .person-switcher{display:none;}
+  }
+
+  /* MOBILE TOP NAV */
+  .mobile-nav{
+    display:none;
+    position:sticky;top:0;left:0;right:0;
+    background:var(--surface);border-bottom:1px solid var(--border);
+    z-index:99;flex-direction:column;
+  }
+  .mobile-person-bar{
+    display:flex;align-items:center;gap:0;
+    padding:6px 10px;border-bottom:1px solid var(--border);
+    overflow-x:auto;white-space:nowrap;
+    -webkit-overflow-scrolling:touch;
+  }
+  .mobile-person-bar::-webkit-scrollbar{display:none;}
+  .mobile-person-pill{
+    padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;
+    border:none;background:var(--surface2);color:var(--text3);
+    cursor:pointer;font-family:var(--sans);white-space:nowrap;margin-right:6px;
+    flex-shrink:0;
+  }
+  .mobile-person-pill.active-all{background:var(--surface2);color:var(--text);font-weight:700;}
+  .mobile-person-pill.mp0.active{background:var(--accent2);color:#0b0f1a;}
+  .mobile-person-pill.mp1.active{background:#a78bfa;color:#0b0f1a;}
+  .mobile-person-pill.mp2.active{background:#34d399;color:#0b0f1a;}
+  .mobile-person-pill.mp3.active{background:#fb923c;color:#0b0f1a;}
+  .mobile-person-pill.all-active{background:var(--border2);color:var(--text);}
+
+  .mobile-tabs{
+    display:flex;overflow-x:auto;white-space:nowrap;
+    padding:0;-webkit-overflow-scrolling:touch;
+  }
+  .mobile-tabs::-webkit-scrollbar{display:none;}
+  .mobile-tab-btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:5px;
+    padding:10px 14px;font-size:12px;font-weight:600;color:var(--text3);
+    border:none;border-bottom:2px solid transparent;background:none;
+    cursor:pointer;font-family:var(--sans);white-space:nowrap;flex-shrink:0;
+  }
+  .mobile-tab-btn .mtab-icon{font-size:14px;line-height:1;}
+  .mobile-tab-btn.active{color:var(--accent2);border-bottom-color:var(--accent2);}
+  @media(max-width:900px){
+    .mobile-nav{display:flex;}
+    .nav{display:none;}
+    body{padding-top:0;}
+  }
+
+  /* PASSWORD GATE */
+  .pw-gate{
+    position:fixed;inset:0;background:var(--bg);z-index:999;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .pw-box{
+    background:var(--surface);border:1px solid var(--border2);border-radius:16px;
+    padding:36px 32px;width:340px;max-width:92vw;text-align:center;
+  }
+  .pw-logo{font-size:36px;margin-bottom:12px;}
+  .pw-title{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--accent2);margin-bottom:4px;}
+  .pw-sub{font-size:13px;color:var(--text3);margin-bottom:24px;}
+  .pw-input{width:100%;padding:11px 14px;font-size:15px;border-radius:8px;text-align:center;letter-spacing:2px;margin-bottom:12px;}
+  .pw-btn{width:100%;padding:11px;font-size:14px;font-weight:600;}
+  .pw-error{color:var(--red);font-size:12px;margin-top:6px;min-height:18px;}
+</style>
+</head>
+<body>
+
+<!-- PASSWORD GATE -->
+<div class="pw-gate" id="pw-gate">
+  <div class="pw-box">
+    <div class="pw-logo">✈</div>
+    <div class="pw-title">KrisFlyer Tracker</div>
+    <div class="pw-sub">Enter password to continue</div>
+    <input class="pw-input" type="password" id="pw-input" placeholder="••••••"
+      onkeydown="if(event.key==='Enter') checkPassword()">
+    <button class="btn btn-primary pw-btn" onclick="checkPassword()">Unlock</button>
+    <div class="pw-error" id="pw-error"></div>
+  </div>
+</div>
+
+<!-- MOBILE TOP NAV -->
+<div class="mobile-nav" id="mobile-nav">
+  <!-- Person filter row -->
+  <div class="mobile-person-bar" id="mobile-person-bar"></div>
+  <!-- Tab row -->
+  <div class="mobile-tabs" id="mobile-tabs">
+    <button class="mobile-tab-btn active" onclick="showTab('overview')" id="mtab-overview">
+      <span class="mtab-icon">📊</span>Overview
+    </button>
+    <button class="mobile-tab-btn" onclick="showTab('cards')" id="mtab-cards">
+      <span class="mtab-icon">💳</span>Cards
+    </button>
+    <button class="mobile-tab-btn" onclick="showTab('update')" id="mtab-update">
+      <span class="mtab-icon">📝</span>Update
+    </button>
+    <button class="mobile-tab-btn" onclick="showTab('expiry')" id="mtab-expiry">
+      <span class="mtab-icon">⏰</span>Expiry
+    </button>
+    <button class="mobile-tab-btn" onclick="showTab('reminders')" id="mtab-reminders">
+      <span class="mtab-icon">🔔</span>Reminders
+    </button>
+    <button class="mobile-tab-btn" onclick="showTab('plan')" id="mtab-plan">
+      <span class="mtab-icon">✈</span>Plan
+    </button>
+  </div>
+</div>
+
+<nav class="nav">
+  <div class="nav-brand">✈ KrisFlyer Tracker <span>/ SG</span></div>
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="showTab('overview')">Overview</button>
+    <button class="nav-tab" onclick="showTab('cards')">Cards</button>
+    <button class="nav-tab" onclick="showTab('update')">Monthly Update</button>
+    <button class="nav-tab" onclick="showTab('expiry')">⏰ Points Expiry</button>
+    <button class="nav-tab" onclick="showTab('reminders')">Reminders</button>
+    <button class="nav-tab" onclick="showTab('plan')">✈ Plan Trip</button>
+  </div>
+  <div class="nav-right">
+    <div class="person-switcher" id="person-switcher"></div>
+    <div style="position:relative;display:inline-block">
+      <button class="btn btn-ghost btn-sm" onclick="toggleExportMenu()">Export ▾</button>
+      <div id="export-menu" style="display:none;position:absolute;right:0;top:34px;background:var(--surface);border:1px solid var(--border2);border-radius:8px;overflow:hidden;z-index:150;min-width:175px;box-shadow:0 4px 20px rgba(0,0,0,.4)">
+        <button onclick="exportData();toggleExportMenu()" style="display:block;width:100%;padding:10px 14px;text-align:left;font-size:13px;color:var(--text);background:none;border:none;cursor:pointer;font-family:var(--sans)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">📋 Current Balances</button>
+        <button onclick="exportHistory();toggleExportMenu()" style="display:block;width:100%;padding:10px 14px;text-align:left;font-size:13px;color:var(--text);background:none;border:none;cursor:pointer;font-family:var(--sans)" onmouseover="this.style.background='var(--surface2)'" onmouseout="this.style.background='none'">📅 Full History (all months)</button>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openAddCard()">+ Add Card</button>
+  </div>
+</nav>
+
+<div class="main" id="main-content"></div>
+
+<!-- MODAL: ADD/EDIT CARD -->
+<div class="modal-overlay" id="card-modal">
+  <div class="modal">
+    <h2 id="modal-title">Add Credit Card</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Bank *</label>
+        <input type="text" id="f-bank" list="bank-list" placeholder="UOB, DBS, Citibank…">
+        <datalist id="bank-list">
+          <option>UOB</option><option>DBS</option><option>Citibank</option><option>HSBC</option>
+          <option>OCBC</option><option>Amex</option><option>SCB</option><option>Maybank</option>
+        </datalist>
+      </div>
+      <div class="form-group">
+        <label>Card Name *</label>
+        <input type="text" id="f-name" placeholder="e.g. PRVI Miles Visa">
+      </div>
+      <div class="form-group">
+        <label>Points Balance</label>
+        <input type="number" id="f-points" placeholder="0" min="0">
+      </div>
+      <div class="form-group">
+        <label>KF Conversion Ratio (pts per mile)</label>
+        <input type="number" id="f-ratio" placeholder="e.g. 3" step="0.1" min="0">
+      </div>
+      <div class="form-group">
+        <label>Pool Group Name (if points are pooled)</label>
+        <input type="text" id="f-pool" placeholder="e.g. UOB Points Pool">
+      </div>
+      <div class="form-group">
+        <label>Points Validity</label>
+        <input type="text" id="f-validity" placeholder="e.g. 3 years, No expiry">
+      </div>
+      <div class="form-group">
+        <label>Points Expiry Date</label>
+        <input type="date" id="f-expiry">
+      </div>
+      <div class="form-group">
+        <label>Annual Fee Month</label>
+        <select id="f-feemonth">
+          <option value="">— no annual fee —</option>
+          <option>January</option><option>February</option><option>March</option>
+          <option>April</option><option>May</option><option>June</option>
+          <option>July</option><option>August</option><option>September</option>
+          <option>October</option><option>November</option><option>December</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Status</label>
+        <select id="f-status">
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Owner</label>
+        <select id="f-owner"></select>
+      </div>
+      <div class="form-group fg-full">
+        <label>Notes (waiver conditions, bonus categories…)</label>
+        <input type="text" id="f-notes" placeholder="">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCard()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: MANAGE PEOPLE -->
+<div class="modal-overlay" id="person-modal">
+  <div class="modal" style="width:420px">
+    <h2>Manage People</h2>
+    <div id="person-list-edit" style="display:flex;flex-direction:column;gap:10px;margin-bottom:14px"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addPersonField()" style="width:100%">+ Add Person</button>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePersonModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePersonNames()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- SUPABASE -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- MODAL: ADD EXPIRY BATCH -->
+<div class="modal-overlay" id="batch-modal">
+  <div class="modal" style="width:460px">
+    <h2>Add Points Expiry Batch</h2>
+    <p style="font-size:12px;color:var(--text3);margin-bottom:16px">Enter the points batch and expiry date as shown in your bank app.</p>
+    <div class="form-grid">
+      <div class="form-group fg-full">
+        <label>Card *</label>
+        <select id="b-card" style="width:100%"></select>
+      </div>
+      <div class="form-group">
+        <label>Points in this batch *</label>
+        <input type="number" id="b-points" placeholder="e.g. 1338" min="1" style="width:100%">
+      </div>
+      <div class="form-group">
+        <label>Expiry Month *</label>
+        <input type="month" id="b-expiry" style="width:100%">
+      </div>
+      <div class="form-group fg-full">
+        <label>Notes (optional)</label>
+        <input type="text" id="b-notes" placeholder="e.g. from Jan 2025 spend" style="width:100%">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeBatchModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveBatchEntry()">Save Batch</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════
+   SUPABASE CONFIG
+   Replace these two values after you create your Supabase project
+═══════════════════════════════ */
+const SUPABASE_URL  = 'https://wnprnkfhhymbyyeingen.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InducHJua2ZoaHltYnl5ZWluZ2VuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEwODg3ODEsImV4cCI6MjA5NjY2NDc4MX0.ocn6Z69Hns-5wZaE0LAOrfDBDRGgJU6Ef6u8NYYoKts';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ═══════════════════════════════
+   PASSWORD
+═══════════════════════════════ */
+const PW_HASH = 'shubz'; // password
+const PW_KEY  = 'kf_unlocked';
+
+function checkPassword(){
+  const val=document.getElementById('pw-input').value;
+  if(val===PW_HASH){
+    localStorage.setItem(PW_KEY, Date.now());
+    document.getElementById('pw-gate').style.display='none';
+  } else {
+    document.getElementById('pw-error').textContent='Incorrect password. Try again.';
+    document.getElementById('pw-input').value='';
+    document.getElementById('pw-input').focus();
+  }
+}
+
+function checkAuth(){
+  const ts=localStorage.getItem(PW_KEY);
+  if(ts && (Date.now()-parseInt(ts)) < 30*24*60*60*1000){
+    document.getElementById('pw-gate').style.display='none';
+  } else {
+    document.getElementById('pw-gate').style.display='flex';
+    setTimeout(()=>document.getElementById('pw-input').focus(), 100);
+  }
+}
+
+/* ═══════════════════════════════
+   STATE
+═══════════════════════════════ */
+let allCards   = [];
+let allHistory = [];
+let allBatches = [];
+let persons    = ['Shubz','Sereen'];
+let editingId  = null;
+let activeTab  = 'overview';
+
+const MONTHS     = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const BANK_ORDER = ['DBS','UOB','Citi','HSBC','OCBC','Amex','SCB','Maybank','Max Miles','KrisFlyer'];
+const collapsed  = {};
+
+const PERSON_COLORS = ['var(--accent2)','#a78bfa','#34d399','#fb923c','#f472b6','#facc15'];
+
+/* ═══════════════════════════════
+   STORAGE — SUPABASE
+═══════════════════════════════ */
+async function loadData() {
+  try {
+    // Load persons
+    const { data: pData } = await sb.from('persons').select('*').order('index');
+    if (pData && pData.length) persons = pData.map(r => r.name);
+
+    // Load cards
+    const { data: cData } = await sb.from('cards').select('*').order('created_at');
+    if (cData && cData.length) {
+      allCards = cData.map(r => ({
+        id:       r.id,
+        owner:    r.owner,
+        bank:     r.bank,
+        name:     r.name,
+        points:   r.points,
+        ratio:    r.ratio,
+        pool:     r.pool || '',
+        validity: r.validity || '',
+        expiry:   r.expiry || '',
+        feemonth: r.feemonth || '',
+        status:   r.status,
+        notes:    r.notes || '',
+        isKF:     r.is_kf || false,
+        lastUpdated: r.last_updated || '',
+      }));
+    }
+
+    // Load history
+    const { data: hData } = await sb.from('history').select('*').order('created_at', {ascending:false}).limit(200);
+    if (hData && hData.length) {
+      allHistory = hData.map(r => ({
+        month:    r.month,
+        owner:    r.owner,
+        cardId:   r.card_id,
+        cardName: r.card_name,
+        bank:     r.bank,
+        balance:  r.balance,
+        prev:     r.prev,
+        change:   r.change,
+        note:     r.note || '',
+      }));
+    }
+    // Load point batches
+    const { data: bData } = await sb.from('point_batches').select('*').order('expiry_date');
+    if (bData && bData.length) {
+      allBatches = bData.map(r => ({
+        id:          r.id,
+        cardId:      r.card_id,
+        owner:       r.owner,
+        bank:        r.bank,
+        cardName:    r.card_name,
+        points:      r.points,
+        expiryMonth: r.expiry_month,
+        expiryDate:  r.expiry_date,
+        notes:       r.notes || '',
+      }));
+    }
+  } catch(e) { console.error('loadData error', e); }
+
+  if (!allCards.length) await seedDemo();
+}
+
+async function saveCards() {
+  try {
+    const rows = allCards.map(c => ({
+      id:           c.id,
+      owner:        c.owner,
+      bank:         c.bank,
+      name:         c.name,
+      points:       c.points,
+      ratio:        c.ratio,
+      pool:         c.pool || null,
+      validity:     c.validity || null,
+      expiry:       c.expiry || null,
+      feemonth:     c.feemonth || null,
+      status:       c.status,
+      notes:        c.notes || null,
+      is_kf:        c.isKF || false,
+      last_updated: c.lastUpdated || null,
+    }));
+    await sb.from('cards').upsert(rows, { onConflict: 'id' });
+  } catch(e) { console.error('saveCards error', e); }
+}
+
+async function saveHistory() {
+  try {
+    if (!allHistory.length) return;
+    const latest = allHistory[0];
+    await sb.from('history').insert({
+      month:     latest.month,
+      owner:     latest.owner,
+      card_id:   latest.cardId,
+      card_name: latest.cardName,
+      bank:      latest.bank,
+      balance:   latest.balance,
+      prev:      latest.prev,
+      change:    latest.change,
+      note:      latest.note || null,
+    });
+  } catch(e) { console.error('saveHistory error', e); }
+}
+
+async function savePersons() {
+  try {
+    const rows = persons.map((name, index) => ({ index, name }));
+    await sb.from('persons').upsert(rows, { onConflict: 'index' });
+  } catch(e) { console.error('savePersons error', e); }
+}
+
+async function deleteCardFromDB(id) {
+  try { await sb.from('cards').delete().eq('id', id); } catch(e) { console.error('deleteCard error', e); }
+}
+async function saveBatch(batch) {
+  try {
+    await sb.from('point_batches').insert({
+      card_id:      batch.cardId,
+      owner:        batch.owner,
+      bank:         batch.bank,
+      card_name:    batch.cardName,
+      points:       batch.points,
+      expiry_month: batch.expiryMonth,
+      expiry_date:  batch.expiryDate,
+      notes:        batch.notes || null,
+    });
+  } catch(e) { console.error('saveBatch error', e); }
+}
+async function deleteBatchFromDB(id) {
+  try { await sb.from('point_batches').delete().eq('id', id); } catch(e) { console.error('deleteBatch error', e); }
+}
+
+/* ═══════════════════════════════
+   HELPERS
+═══════════════════════════════ */
+function uid(){ return 'c'+Date.now().toString(36)+Math.random().toString(36).slice(2,5); }
+function fmtDate(d){ return d.toISOString().split('T')[0]; }
+function addMonths(d,n){ const x=new Date(d); x.setMonth(x.getMonth()+n); return x; }
+function personColor(pi){ return PERSON_COLORS[pi%PERSON_COLORS.length]; }
+
+function getMiles(card){
+  if(!card.ratio||card.ratio<=0) return 0;
+  return Math.floor(card.points*card.ratio);
+}
+function getExpiryDays(card){
+  if(!card.expiry) return null;
+  return Math.ceil((new Date(card.expiry)-new Date())/86400000);
+}
+function getFeeCountdown(card){
+  if(!card.feemonth) return null;
+  const today=new Date(), yr=today.getFullYear(), mi=MONTHS.indexOf(card.feemonth);
+  if(mi<0) return null;
+  let fd=new Date(yr,mi,1);
+  if(fd<=today) fd=new Date(yr+1,mi,1);
+  return Math.ceil((fd-today)/86400000);
+}
+function feeCountdownHtml(card){
+  const d=getFeeCountdown(card);
+  if(d===null) return '<span style="color:var(--text3)">—</span>';
+  const cls=d<=30?'fc-soon':d<=90?'fc-mid':'fc-ok';
+  return `<div class="fee-countdown ${cls}" style="font-weight:600">${card.feemonth.slice(0,3)}</div><div class="fee-countdown ${cls}" style="font-size:10px">${d}d away</div>`;
+}
+function ratioBadge(ratio){
+  if(!ratio) return '<span style="color:var(--text3)">—</span>';
+  return `<span class="ratio-badge">${ratio}<span class="ratio-arrow">→</span>1</span>`;
+}
+function bankPillClass(b){
+  const k=b.toLowerCase();
+  if(k==='uob') return 'bp-uob';
+  if(k==='dbs') return 'bp-dbs';
+  if(k.includes('citi')) return 'bp-citi';
+  if(k==='hsbc') return 'bp-hsbc';
+  if(k==='ocbc') return 'bp-ocbc';
+  if(k==='amex') return 'bp-amex';
+  if(k==='scb'||k.includes('standard')) return 'bp-scb';
+  if(k==='maybank') return 'bp-maybank';
+  if(k.includes('max')) return 'bp-amex';
+  if(k.includes('kris')) return 'bp-krisflyer';
+  return 'bp-other';
+}
+function cardsFor(pi){ return allCards.filter(c=>c.owner===pi&&c.status==='active'); }
+
+/* ═══════════════════════════════
+   SEED
+═══════════════════════════════ */
+function seedDemo(){
+  allCards=[
+    // ── SHUBZ (owner:0) ──────────────────────────────────────────
+    // DBS
+    {id:uid(),owner:0,bank:'DBS',name:'Altitude',points:51464,ratio:2,pool:'',validity:'No expiry',expiry:'',feemonth:'September',status:'active',notes:'1.3mpd local · 2.2mpd overseas'},
+    {id:uid(),owner:0,bank:'DBS',name:'Womans',points:4687,ratio:2,pool:'',validity:'1 year',expiry:'',feemonth:'January',status:'active',notes:'4mpd · Online txns · $1,500 cap'},
+    // Citi
+    {id:uid(),owner:0,bank:'Citi',name:'Rewards',points:225124,ratio:0.4,pool:'',validity:'5 yrs from card approval',expiry:'',feemonth:'May',status:'active',notes:'4mpd online excl. travel · Tag to Amaze · $1k cap'},
+    // UOB — pooled
+    {id:uid(),owner:0,bank:'UOB',name:'PPV',points:0,ratio:2,pool:'UOB Points',validity:'2 years',expiry:'',feemonth:'August',status:'active',notes:'4mpd Paywave · $5 blocks'},
+    {id:uid(),owner:0,bank:'UOB',name:"Lady's",points:0,ratio:2,pool:'UOB Points',validity:'2 yrs from earn',expiry:'',feemonth:'August',status:'active',notes:'6mpd dining · $1k cap'},
+    {id:uid(),owner:0,bank:'UOB',name:'Privi',points:102967,ratio:2,pool:'UOB Points',validity:'2 years',expiry:'',feemonth:'November',status:'active',notes:'1.4mpd · Overseas & past cap · $5 blocks'},
+    // UOB Kris — direct to KrisFlyer, track as 1:1
+    {id:uid(),owner:0,bank:'UOB',name:'Kris',points:0,ratio:1,pool:'',validity:'3 years',expiry:'',feemonth:'April',status:'active',notes:'3mpd · Dining, online, travel, transport · MIN $1k SIA grp'},
+    // HSBC
+    {id:uid(),owner:0,bank:'HSBC',name:'Revolution',points:24199,ratio:0.333,pool:'',validity:'3 years',expiry:'',feemonth:'',status:'active',notes:'4mpd online & contactless · $1k cap · No annual fee'},
+    // OCBC
+    {id:uid(),owner:0,bank:'OCBC',name:'90N',points:94355,ratio:1,pool:'',validity:'No expiry',expiry:'',feemonth:'October',status:'active',notes:'1.3mpd · No cap'},
+    {id:uid(),owner:0,bank:'OCBC',name:'Rewards',points:23060,ratio:0.4,pool:'',validity:'2 years',expiry:'',feemonth:'January',status:'active',notes:'4-6mpd · $1,100 cap'},
+    // Max Miles platform
+    {id:uid(),owner:0,bank:'Max Miles',name:'Platform',points:5528,ratio:1,pool:'',validity:'',expiry:'',feemonth:'',status:'active',notes:'Miles platform · 1:1 to KrisFlyer'},
+    // KrisFlyer — already transferred miles sitting in account
+    {id:uid(),owner:0,bank:'KrisFlyer',name:'Account Balance',points:190941,ratio:1,pool:'',validity:'3 years',expiry:'',feemonth:'',status:'active',notes:'Already transferred · ready to redeem',isKF:true},
+
+    // ── SEREEN (owner:1) ──────────────────────────────────────────
+    {id:uid(),owner:1,bank:'KrisFlyer',name:'Account Balance',points:44394,ratio:1,pool:'',validity:'3 years',expiry:'',feemonth:'',status:'active',notes:'Already transferred · ready to redeem',isKF:true},
+    {id:uid(),owner:1,bank:'DBS',name:'Altitude',points:46823,ratio:2,pool:'',validity:'No expiry',expiry:'',feemonth:'March',status:'active',notes:'1.3mpd local · 2.2mpd overseas'},
+    {id:uid(),owner:1,bank:'UOB',name:"Lady's",points:30788,ratio:2,pool:'UOB Points',validity:'2 yrs from earn',expiry:'',feemonth:'September',status:'active',notes:'6mpd dining · $1k cap'},
+    {id:uid(),owner:1,bank:'UOB',name:'PPV',points:0,ratio:2,pool:'UOB Points',validity:'2 years',expiry:'',feemonth:'July',status:'active',notes:'4mpd Paywave · $5 blocks · Fee due July/August'},
+    {id:uid(),owner:1,bank:'Citi',name:'Rewards',points:124063,ratio:0.4,pool:'',validity:'5 yrs from card approval',expiry:'',feemonth:'June',status:'active',notes:'4mpd online excl. travel · Tag to Amaze · $1k cap'},
+  ];
+  saveCards();
+}
+
+/* ═══════════════════════════════
+   TABS
+═══════════════════════════════ */
+function showTab(name){
+  activeTab=name;
+  // Sync desktop nav tabs
+  document.querySelectorAll('.nav-tab').forEach(el=>{
+    const map={'overview':'Overview','cards':'Cards','update':'Monthly','expiry':'Expiry','reminders':'Reminders','plan':'Plan'};
+    el.classList.toggle('active', el.textContent.includes(map[name]||name));
+  });
+  // Sync mobile tab bar
+  ['overview','cards','update','expiry','reminders','plan'].forEach(t=>{
+    const el=document.getElementById(`mtab-${t}`);
+    if(el) el.classList.toggle('active',t===name);
+  });
+  renderMain();
+}
+
+let activePerson = -1; // -1 = show all
+
+/* ═══════════════════════════════
+   PERSON SWITCHER
+═══════════════════════════════ */
+function switchPerson(i){
+  activePerson = (activePerson===i) ? -1 : i; // toggle: click active = show all
+  renderPersonSwitcher();
+  renderMain();
+}
+
+function renderPersonSwitcher(){
+  const sw=document.getElementById('person-switcher');
+  sw.innerHTML=
+    `<button class="person-btn all-btn ${activePerson===-1?'all-active':''}" onclick="switchPerson(-1)">All</button>` +
+    `<div class="person-divider"></div>` +
+    persons.map((p,i)=>`
+      <button class="person-btn p${i} ${activePerson===i?'active':''}" onclick="switchPerson(${i})"
+        style="border-left:1px solid var(--border2)"
+        title="${p}">${p}</button>
+    `).join('') +
+    `<div class="person-divider"></div>
+     <button class="person-add-btn" onclick="openPersonModal()" title="Manage people">✎ People</button>`;
+  renderMobilePersonBar();
+}
+
+function renderMobilePersonBar(){
+  const bar=document.getElementById('mobile-person-bar');
+  if(!bar) return;
+  bar.innerHTML=
+    `<button class="mobile-person-pill ${activePerson===-1?'all-active':''}" onclick="switchPerson(-1)">All</button>` +
+    persons.map((p,i)=>`
+      <button class="mobile-person-pill mp${i} ${activePerson===i?'active':''}" onclick="switchPerson(${i})">${p}</button>
+    `).join('');
+}
+
+function openPersonModal(){
+  const list=document.getElementById('person-list-edit');
+  list.innerHTML=persons.map((p,i)=>`
+    <div style="display:flex;gap:8px;align-items:center">
+      <div style="width:10px;height:10px;border-radius:50%;background:${personColor(i)};flex-shrink:0"></div>
+      <input type="text" id="pm-p${i}" value="${p}" placeholder="Person ${i+1}" style="flex:1">
+      ${persons.length>1?`<button class="btn btn-danger btn-sm" onclick="removePersonField(${i})">✕</button>`:''}
+    </div>`).join('');
+  document.getElementById('person-modal').classList.add('open');
+}
+
+function addPersonField(){
+  const newIdx=persons.length;
+  persons.push(`Person ${newIdx+1}`);
+  openPersonModal();
+}
+
+function removePersonField(i){
+  if(persons.length<=1){alert('Need at least one person.');return;}
+  const hasCards=allCards.some(c=>c.owner===i);
+  if(hasCards){
+    if(!confirm(`${persons[i]} has cards. Remove them from this person (they won't be deleted, just re-assigned to ${persons[0]})?`)) return;
+    allCards.forEach(c=>{ if(c.owner===i) c.owner=0; if(c.owner>i) c.owner--; });
+  } else {
+    allCards.forEach(c=>{ if(c.owner>i) c.owner--; });
+  }
+  persons.splice(i,1);
+  openPersonModal();
+}
+
+function closePersonModal(){ document.getElementById('person-modal').classList.remove('open'); }
+
+async function savePersonNames(){
+  persons=persons.map((_,i)=>document.getElementById(`pm-p${i}`)?.value.trim()||`Person ${i+1}`);
+  await savePersons();
+  await saveCards();
+  closePersonModal();
+  renderPersonSwitcher();
+  renderMain();
+}
+
+/* ═══════════════════════════════
+   MAIN RENDER ROUTER
+═══════════════════════════════ */
+function renderMain(){
+  const el=document.getElementById('main-content');
+  const visiblePersons = activePerson===-1 ? persons.map((_,i)=>i) : [activePerson];
+  if(activeTab==='overview')   { el.innerHTML=''; visiblePersons.forEach(i=>el.appendChild(buildOverviewSection(i))); }
+  if(activeTab==='cards')      { el.innerHTML=''; visiblePersons.forEach(i=>el.appendChild(buildCardsSection(i))); }
+  if(activeTab==='update')     { el.innerHTML=''; el.appendChild(buildUpdateSection()); }
+  if(activeTab==='expiry')     { el.innerHTML=''; el.appendChild(buildExpiryBatchSection()); }
+  if(activeTab==='reminders')  { el.innerHTML=''; el.appendChild(buildRemindersSection()); }
+  if(activeTab==='plan')       { el.innerHTML=''; el.appendChild(buildPlanSection()); }
+}
+
+/* ═══════════════════════════════
+   OVERVIEW SECTION
+═══════════════════════════════ */
+function buildOverviewSection(pi){
+  const wrap=document.createElement('div');
+  wrap.className='person-section';
+
+  const cards=cardsFor(pi);
+  const pColor=personColor(pi);
+
+  const CONVERTED_BANKS=['KrisFlyer','Max Miles'];
+  // Cards that earn points and need conversion
+  const pointCards=cards.filter(c=>!CONVERTED_BANKS.includes(c.bank)&&!c.isKF);
+  // Cards/accounts already in miles (KrisFlyer account balance + Max Miles platform)
+  const convertedCards=cards.filter(c=>CONVERTED_BANKS.includes(c.bank)||c.isKF);
+
+  // Estimated miles from card points (points × ratio, rounded)
+  const cardMiles=pointCards.reduce((s,c)=>s+getMiles(c),0);
+  // Already-converted miles sitting ready to use
+  const convertedMiles=convertedCards.reduce((s,c)=>s+c.points,0);
+  const totalMiles=Math.floor(cardMiles+convertedMiles);
+
+  const expiring=pointCards.filter(c=>{const d=getExpiryDays(c);return d!==null&&d<=90&&d>=0;});
+  const feesSoon=cards.filter(c=>{const d=getFeeCountdown(c);return d!==null&&d<=90;});
+
+  wrap.innerHTML=`
+    <div class="person-section-header">
+      <span class="person-name-badge" style="color:${pColor}">${persons[pi]}</span>
+      <div class="person-section-divider" style="background:linear-gradient(90deg,${pColor}66,transparent)"></div>
+      <span style="font-size:12px;color:var(--text3)">${pointCards.length} cards · ${[...new Set(pointCards.map(c=>c.bank))].length} banks</span>
+      <div class="miles-bubble">
+        <div class="miles-bubble-val">✈ ${totalMiles.toLocaleString()}</div>
+        <div class="miles-bubble-label">Total KF Miles</div>
+        <div class="miles-bubble-sub">${Math.floor(cardMiles).toLocaleString()} est + ${convertedMiles.toLocaleString()} ready</div>
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card red">
+        <div class="stat-label">Points Expiring ≤ 90 days</div>
+        <div class="stat-value red">${(()=>{
+          const cutoff=new Date(); cutoff.setDate(cutoff.getDate()+90);
+          return allBatches.filter(b=>b.owner===pi&&new Date(b.expiryDate)<=cutoff).reduce((s,b)=>s+b.points,0).toLocaleString();
+        })()}</div>
+        <div class="stat-sub">${(()=>{
+          const cutoff=new Date(); cutoff.setDate(cutoff.getDate()+90);
+          const batches=allBatches.filter(b=>b.owner===pi&&new Date(b.expiryDate)<=cutoff);
+          return batches.length?`${batches.length} batch${batches.length!==1?'es':''} · ${[...new Set(batches.map(b=>b.cardName))].join(', ')}`:'No batches expiring soon';
+        })()}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Annual Fees — Next 3 Months</div>
+        <div class="stat-value gold">${feesSoon.length}</div>
+        ${feesSoon.length ? `<div class="fee-ticker-wrap">
+          <div class="fee-ticker">
+            ${[...feesSoon,...feesSoon].map(c=>{
+              const fd=getFeeCountdown(c);
+              const cls=fd<=31?'urgent':fd<=62?'mid':'ok';
+              const flag=fd<=31?'🔴':'📅';
+              return `<span class="fee-ticker-item ${cls}">${flag} ${c.bank} ${c.name} · ${c.feemonth}<span class="fee-ticker-sep">  ·  </span></span>`;
+            }).join('')}
+          </div>
+        </div>` : `<div class="stat-sub">None in next 3 months</div>`}
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-label">Cards & Banks</div>
+        <div class="stat-value blue">${pointCards.length}</div>
+        <div class="stat-sub">${[...new Set(pointCards.map(c=>c.bank))].join(' · ')||'No cards yet'}</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title"><span class="dot" style="background:var(--red)"></span>Points Expiry Batches</div>
+      <a onclick="showTab('expiry')" style="font-size:12px;color:var(--accent2);cursor:pointer">View all →</a>
+    </div>
+    ${buildExpiryTable(pi)}
+
+    <div class="alerts-grid">
+      <div class="alert-card">
+        <div class="section-title" style="margin-bottom:10px"><span class="dot" style="background:var(--gold)"></span>Upcoming Annual Fees</div>
+        ${buildFeeAlerts(pi)}
+      </div>
+      <div class="alert-card">
+        <div class="section-title" style="margin-bottom:10px"><span class="dot" style="background:var(--green)"></span>Miles by Card</div>
+        ${buildMilesBreakdown(pi)}
+      </div>
+    </div>
+    ${pi<persons.length-1?'<hr class="person-sep">':''}
+  `;
+  return wrap;
+}
+
+function buildExpiryTable(pi){
+  const batches=allBatches
+    .filter(b=>b.owner===pi)
+    .sort((a,b)=>new Date(a.expiryDate)-new Date(b.expiryDate));
+
+  if(!batches.length) return `
+    <div class="table-wrap" style="margin-bottom:20px">
+      <div class="empty" style="padding:24px">
+        <div class="icon">⏰</div>
+        No point expiry batches tracked yet.
+        <div style="margin-top:6px"><a onclick="showTab('expiry')" style="color:var(--accent2);cursor:pointer;font-size:12px">→ Go to Points Expiry tab to add batches</a></div>
+      </div>
+    </div>`;
+
+  return `<div class="table-wrap" style="margin-bottom:20px"><table><thead><tr>
+    <th>Bank</th><th>Card</th><th>Batch Points</th><th>Ratio</th><th>Est. Miles</th><th>Expiry Date</th><th>Days Left</th><th>Status</th>
+  </tr></thead><tbody>${batches.map(b=>{
+    const card=allCards.find(c=>c.id===b.cardId);
+    const ratio=card?card.ratio:1;
+    const isKF=card&&(card.bank==='KrisFlyer'||card.isKF);
+    const miles=Math.floor(b.points*ratio);
+    const d=Math.ceil((new Date(b.expiryDate)-new Date())/86400000);
+    const bc=d<=30?'b-red':d<=90?'b-orange':d<=180?'b-gold':'b-gray';
+    const label=d<=30?'Critical':d<=90?'Soon':d<=180?'Watch':'OK';
+    return `<tr>
+      <td><span class="badge ${bankPillClass(b.bank)}">${b.bank}</span></td>
+      <td><strong>${b.cardName}</strong></td>
+      <td class="mono">${b.points.toLocaleString()} ${isKF?'mi':'pts'}</td>
+      <td>${isKF?'<span style="color:var(--accent2);font-size:11px">already miles</span>':ratioBadge(ratio)}</td>
+      <td class="mono" style="color:var(--accent2)">${miles.toLocaleString()} mi</td>
+      <td class="mono">${b.expiryDate}</td>
+      <td class="mono">${d}d</td>
+      <td><span class="badge ${bc}">${label}</span></td>
+    </tr>`;
+  }).join('')}</tbody></table></div>`;
+}
+
+function buildFeeAlerts(pi){
+  const today=new Date();
+  const nextMonthStart=new Date(today.getFullYear(), today.getMonth()+1, 1);
+  const nextMonthEnd=new Date(today.getFullYear(), today.getMonth()+2, 0);
+
+  const rows=cardsFor(pi).filter(c=>c.feemonth)
+    .map(c=>({...c,fd:getFeeCountdown(c)}))
+    .filter(c=>c.fd<=92)
+    .sort((a,b)=>a.fd-b.fd);
+
+  if(!rows.length) return '<div class="alert-item" style="padding:10px 0"><div style="color:var(--text3);font-size:12px">No fees due in next 3 months ✅</div></div>';
+
+  return rows.map(c=>{
+    const isNextMonth = c.fd<=31;
+    const isTwoMonths = c.fd<=62 && c.fd>31;
+    const iconCls = isNextMonth?'ai-danger':isTwoMonths?'ai-warn':'ai-info';
+    const icon = isNextMonth?'⚠️':isTwoMonths?'📅':'💳';
+    const monthColor = isNextMonth?'var(--red)':isTwoMonths?'var(--orange)':'var(--text3)';
+    return `
+    <div class="alert-item">
+      <div class="alert-icon ${iconCls}">${icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:8px">
+          <div class="alert-title">
+            <span style="font-size:11px;color:var(--text3)">${c.bank} ·</span> <strong>${c.name}</strong>
+          </div>
+          <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${monthColor};white-space:nowrap">${c.feemonth}</span>
+        </div>
+        <div class="alert-sub" style="color:${monthColor}">${isNextMonth?'⚡ Due next month':isTwoMonths?'Due in ~2 months':'Due in ~3 months'} · <span style="font-family:var(--mono)">${c.fd}d away</span></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function buildMilesBreakdown(pi){
+  const cards=cardsFor(pi);
+  const CONVERTED_BANKS=['KrisFlyer','Max Miles'];
+  const pointCards=cards.filter(c=>!CONVERTED_BANKS.includes(c.bank)&&!c.isKF);
+  const convertedCards=cards.filter(c=>(CONVERTED_BANKS.includes(c.bank)||c.isKF)&&c.points>0);
+  const grandTotal=cards.filter(c=>!CONVERTED_BANKS.includes(c.bank)&&!c.isKF).reduce((s,c)=>s+getMiles(c),0)
+    + convertedCards.reduce((s,c)=>s+c.points,0);
+
+  if(!pointCards.length&&!convertedCards.length) return '<div style="color:var(--text3);font-size:13px;padding:8px 0">No points yet.</div>';
+
+  // Group all point cards by bank
+  const byBank={};
+  pointCards.forEach(c=>{ (byBank[c.bank]=byBank[c.bank]||[]).push(c); });
+
+  // Sort banks by total miles desc
+  const sortedBanks=Object.entries(byBank).sort((a,b)=>{
+    const ma=a[1].reduce((s,c)=>s+getMiles(c),0);
+    const mb=b[1].reduce((s,c)=>s+getMiles(c),0);
+    return mb-ma;
+  });
+
+  let html='';
+  sortedBanks.forEach(([bank, bankCards])=>{
+    const bankMiles=bankCards.reduce((s,c)=>s+getMiles(c),0);
+    const pct=grandTotal>0?(bankMiles/grandTotal*100).toFixed(1):0;
+    const hasMultiple=bankCards.length>1;
+
+    // Check if this bank has a pool
+    const poolGroups={};
+    const unpooled=[];
+    bankCards.forEach(c=>{
+      if(c.pool) (poolGroups[c.pool]=poolGroups[c.pool]||[]).push(c);
+      else unpooled.push(c);
+    });
+    const isPooled=Object.keys(poolGroups).length>0;
+
+    html+=`<div style="margin-bottom:14px">
+      <!-- Bank header row -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:6px">
+        <span style="font-size:11px;font-weight:600;color:var(--text2)">
+          <span class="badge ${bankPillClass(bank)}" style="font-size:10px;padding:1px 7px;margin-right:5px">${bank}</span>${isPooled?'<span style="font-size:10px;color:var(--text3)">pooled</span>':''}
+        </span>
+        <span style="font-family:var(--mono);font-size:12px;color:var(--accent2);font-weight:700;flex-shrink:0">${bankMiles.toLocaleString()}</span>
+      </div>
+      <div class="prog" style="margin-bottom:7px"><div class="prog-bar" style="width:${pct}%;background:var(--accent)"></div></div>
+      <!-- Card sub-rows -->
+      ${bankCards.sort((a,b)=>getMiles(b)-getMiles(a)).map(c=>{
+        const m=getMiles(c), cpct=grandTotal>0?(m/grandTotal*100).toFixed(1):0;
+        return `<div style="margin-bottom:5px;padding-left:10px;border-left:2px solid var(--border2)">
+          <div style="display:flex;justify-content:space-between;gap:6px;margin-bottom:2px">
+            <span style="font-size:11px;color:var(--text3)">${c.name}</span>
+            <span style="display:flex;gap:5px;align-items:center;flex-shrink:0">
+              ${ratioBadge(c.ratio)}
+              ${!isPooled ? `<span style="font-family:var(--mono);font-size:11px;color:var(--text2)">${m.toLocaleString()}</span>` : ''}
+            </span>
+          </div>
+          ${!isPooled ? `<div class="prog" style="height:3px"><div class="prog-bar" style="width:${cpct}%;background:var(--accent2);opacity:.5"></div></div>` : ''}
+        </div>`;
+      }).join('')}
+    </div>`;
+  });
+
+  // Converted & ready
+  const convertedRows=convertedCards.map(c=>{
+    const pct=grandTotal>0?(c.points/grandTotal*100).toFixed(1):0;
+    const isKF=c.bank==='KrisFlyer'||c.isKF;
+    return `<div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px;gap:6px">
+        <span style="font-size:11px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          <span class="badge ${isKF?'bp-krisflyer':'bp-amex'}" style="font-size:10px;padding:1px 6px">${c.bank}</span>
+          <span style="color:var(--text2);margin-left:4px">${c.name}</span>
+        </span>
+        <span style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+          <span style="font-size:10px;color:var(--text3)">ready</span>
+          <span style="font-family:var(--mono);font-size:12px;color:${isKF?'var(--accent2)':'var(--green)'};font-weight:700">${c.points.toLocaleString()}</span>
+        </span>
+      </div>
+      <div class="prog"><div class="prog-bar" style="width:${pct}%;background:${isKF?'var(--accent)':'var(--green)'}"></div></div>
+    </div>`;
+  }).join('');
+
+  return html + (convertedCards.length ? `
+    <div style="border-top:1px dashed var(--border);margin:10px 0 8px;display:flex;align-items:center;gap:6px">
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">✈ Converted & Ready</span>
+    </div>
+    ${convertedRows}` : '');
+}
+
+/* ═══════════════════════════════
+   CARDS SECTION
+═══════════════════════════════ */
+function buildCardsSection(pi){
+  const wrap=document.createElement('div');
+  wrap.className='person-section';
+  const search=(document.getElementById(`search-${pi}`)?.value||'').toLowerCase();
+  const statusFilter=document.getElementById(`status-${pi}`)?.value||'';
+
+  const allBanks=[...new Set(allCards.filter(c=>c.owner===pi).map(c=>c.bank))];
+  const extraBanks=allBanks.filter(b=>!BANK_ORDER.includes(b)).sort();
+  const orderedBanks=[...BANK_ORDER,...extraBanks];
+
+  const pColor=personColor(pi);
+
+  wrap.innerHTML=`
+    <div class="person-section-header">
+      <span class="person-name-badge" style="color:${pColor}">${persons[pi]}</span>
+      <div class="person-section-divider" style="background:linear-gradient(90deg,${pColor}66,transparent)"></div>
+    </div>
+    <div class="filters">
+      <span class="filter-label">Show:</span>
+      <select id="status-${pi}" onchange="renderMain()">
+        <option value="">All</option><option value="active">Active</option><option value="inactive">Inactive</option>
+      </select>
+      <input type="text" id="search-${pi}" placeholder="Search cards…" oninput="renderMain()" style="width:170px">
+      <span style="margin-left:auto;font-size:11px;color:var(--text3)">Click any balance to edit inline</span>
+    </div>
+    <div id="bank-groups-${pi}">
+      ${orderedBanks.map(bank=>buildBankGroup(pi,bank,search,statusFilter)).join('')}
+    </div>
+    <div style="margin-top:8px">
+      <button class="btn btn-ghost btn-sm" onclick="openAddCard(${pi})">+ Add card for ${persons[pi]}</button>
+    </div>
+    ${pi<persons.length-1?'<hr class="person-sep">':''}
+  `;
+  return wrap;
+}
+
+function buildBankGroup(pi, bank, search, statusFilter){
+  const bankCards=allCards.filter(c=>
+    c.owner===pi && c.bank===bank &&
+    (!statusFilter||c.status===statusFilter) &&
+    (!search||c.name.toLowerCase().includes(search)||c.bank.toLowerCase().includes(search))
+  );
+  const isPinned=BANK_ORDER.includes(bank);
+  if(!bankCards.length && !isPinned) return '';
+  if(!bankCards.length && isPinned && search) return '';
+
+  const poolMap={};
+  const unpooled=[];
+  bankCards.forEach(c=>{
+    if(c.pool) { (poolMap[c.pool]=poolMap[c.pool]||[]).push(c); }
+    else unpooled.push(c);
+  });
+
+  const activeCards=bankCards.filter(c=>c.status==='active');
+  const totalBankMiles=activeCards.reduce((s,c)=>s+getMiles(c),0);
+  const totalBankPts=activeCards.reduce((s,c)=>s+c.points,0);
+  const hasExpiring=activeCards.some(c=>{const d=getExpiryDays(c);return d!==null&&d<=90&&d>=0;});
+  const feesSoon=activeCards.filter(c=>{const d=getFeeCountdown(c);return d!==null&&d<=30;});
+  const colKey=`${pi}-${bank}`;
+  const isOpen=!collapsed[colKey];
+
+  let rowsHtml='';
+
+  Object.entries(poolMap).forEach(([poolName, poolCards])=>{
+    const poolMiles=poolCards.filter(c=>c.status==='active').reduce((s,c)=>s+getMiles(c),0);
+    const poolPts=poolCards.filter(c=>c.status==='active').reduce((s,c)=>s+c.points,0);
+    rowsHtml+=`<tr class="pool-row">
+      <td colspan="2"><span class="pool-label">⬡ ${poolName}</span> <span style="color:var(--text3);font-size:11px">(pooled · ${poolCards.length} cards)</span></td>
+      <td class="mono" style="color:var(--gold2);font-weight:600">${poolPts.toLocaleString()}</td>
+      <td></td>
+      <td class="mono" style="color:var(--accent2);font-weight:700">${poolMiles.toLocaleString()} mi</td>
+      <td colspan="3"></td>
+    </tr>`;
+    poolCards.forEach(c=>{ rowsHtml+=buildCardRow(c, true); });
+  });
+
+  unpooled.forEach(c=>{ rowsHtml+=buildCardRow(c, false); });
+
+  if(!bankCards.length){
+    rowsHtml=`<tr><td colspan="8"><div class="empty" style="padding:16px">No ${bank} cards yet.</div></td></tr>`;
+  }
+
+  return `
+  <div class="bank-group">
+    <div class="bank-header ${isOpen?'':'closed'}" onclick="toggleGroup('${colKey}')">
+      <div class="bank-header-left">
+        <span class="bank-pill ${bankPillClass(bank)}">${bank}</span>
+        <span style="font-size:12px;color:var(--text2)">${bankCards.length} card${bankCards.length!==1?'s':''}</span>
+        ${hasExpiring?'<span class="badge b-red" style="font-size:10px">⚠ expiring</span>':''}
+        ${feesSoon.length?`<span class="badge b-orange" style="font-size:10px">📅 fee due</span>`:''}
+      </div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <div class="bank-summary">
+          <div class="bank-stat">
+            <div class="bank-stat-val" style="color:var(--text3);font-size:11px">${totalBankPts.toLocaleString()} pts</div>
+            <div class="bank-stat-lbl">Balance</div>
+          </div>
+          <div class="bank-stat">
+            <div class="bank-stat-val" style="color:var(--accent2)">${totalBankMiles.toLocaleString()}</div>
+            <div class="bank-stat-lbl">Est. Miles</div>
+          </div>
+        </div>
+        <span class="chevron ${isOpen?'open':''}">▼</span>
+      </div>
+    </div>
+    ${isOpen?`
+    <div class="bank-body">
+      <table>
+        <thead><tr>
+          <th style="width:28%">Card</th>
+          <th>Points</th>
+          <th>Ratio</th>
+          <th>Est. Miles</th>
+          <th>Expiry</th>
+          <th>Fee Month</th>
+          <th>Actions</th>
+        </tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <div class="bank-add-row">
+        <button class="btn btn-ghost btn-sm" onclick="openAddCardForBank('${bank}',${pi})">+ Add ${bank} card for ${persons[pi]}</button>
+      </div>
+    </div>`:''}
+  </div>`;
+}
+
+function buildCardRow(c, indented){
+  const miles=getMiles(c);
+  const d=getExpiryDays(c);
+  const expiryHtml=c.expiry
+    ? `<span class="badge ${d<=30?'b-red':d<=90?'b-orange':d<=180?'b-gold':'b-gray'}">${c.expiry}<span style="opacity:.6;font-size:10px"> ${d}d</span></span>`
+    : '<span style="color:var(--text3)">—</span>';
+
+  return `<tr class="card-row">
+    <td>
+      <div class="${indented?'card-indent':''}">
+        <div>
+          <div style="font-weight:500">${c.name}</div>
+          ${c.validity?`<div style="font-size:10px;color:var(--text3)">⏱ ${c.validity}</div>`:''}
+          ${c.pool?`<div style="font-size:10px;color:var(--text3)">⬡ ${c.pool}</div>`:''}
+          ${c.notes?`<div style="font-size:10px;color:var(--text3);font-style:italic">${c.notes}</div>`:''}
+        </div>
+      </div>
+    </td>
+    <td><input class="inline-edit" type="number" value="${c.points}" onchange="quickUpdatePoints('${c.id}',this.value)"></td>
+    <td>${ratioBadge(c.ratio)}</td>
+    <td class="mono" style="color:var(--accent2);font-weight:600">${miles.toLocaleString()}</td>
+    <td>${expiryHtml}</td>
+    <td>${feeCountdownHtml(c)}</td>
+    <td>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-sm" onclick="openEditCard('${c.id}')">Edit</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteCard('${c.id}')">Del</button>
+      </div>
+    </td>
+  </tr>`;
+}
+
+function toggleGroup(key){
+  collapsed[key]=!collapsed[key];
+  renderMain();
+}
+
+/* ═══════════════════════════════
+   MONTHLY UPDATE
+═══════════════════════════════ */
+function buildUpdateSection(){
+  const wrap=document.createElement('div');
+  const now=new Date();
+  const prevMonth=new Date(now.getFullYear(), now.getMonth()-1, 1);
+  const defaultMonth=prevMonth.toISOString().slice(0,7);
+
+  wrap.innerHTML=`
+    <div class="section-header">
+      <div class="section-title"><span class="dot" style="background:var(--green)"></span>Monthly Points Update</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <label style="font-size:12px;color:var(--text3)">Statement Month:</label>
+        <input type="month" id="update-month" value="${defaultMonth}" style="width:150px">
+        <button class="btn btn-success btn-sm" onclick="saveAllUpdates()">Save All</button>
+      </div>
+    </div>
+    ${(activePerson===-1 ? persons.map((_,i)=>i) : [activePerson]).map(pi=>`
+      <div style="margin-bottom:24px">
+        <div style="font-size:12px;font-weight:700;color:${personColor(pi)};text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">${persons[pi]}</div>
+        <div class="table-wrap" style="margin-bottom:0">
+          <table><thead><tr>
+            <th>Bank</th><th>Card</th><th>Ratio</th><th>Current Balance</th><th>New Balance</th><th>Δ Change</th><th>Notes</th>
+          </tr></thead><tbody>
+          ${allCards.filter(c=>c.owner===pi&&c.status==='active').map(c=>`
+            <tr>
+              <td><span class="badge ${bankPillClass(c.bank)}" style="font-size:10px">${c.bank}</span></td>
+              <td><strong>${c.name}</strong></td>
+              <td>${ratioBadge(c.ratio)}</td>
+              <td class="mono">${c.points.toLocaleString()}</td>
+              <td><input type="number" id="upd-${c.id}" placeholder="${c.points}" style="width:120px" min="0" oninput="previewChange('${c.id}',${c.points},this.value)"></td>
+              <td class="mono" id="chg-${c.id}" style="color:var(--text3)">—</td>
+              <td><input type="text" id="note-${c.id}" placeholder="Note…" style="width:140px"></td>
+            </tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>`).join('')}
+
+    <div class="section-header" style="margin-top:8px">
+      <div class="section-title"><span class="dot"></span>Update History</div>
+      <select id="hf-person" onchange="renderHistoryTable()" style="width:130px">
+        ${persons.map((p,i)=>`<option value="${i}">${p}</option>`).join('')}
+        <option value="all">All</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table><thead><tr><th>Statement Month</th><th>Person</th><th>Bank</th><th>Card</th><th>Balance</th><th>Change</th><th>Notes</th></tr></thead>
+      <tbody id="history-tbody"></tbody></table>
+    </div>
+  `;
+
+  setTimeout(()=>renderHistoryTable(),0);
+  return wrap;
+}
+
+function previewChange(id, old, val){
+  const el=document.getElementById(`chg-${id}`);
+  if(!el) return;
+  const nv=parseInt(val);
+  if(isNaN(nv)){ el.textContent='—'; el.style.color='var(--text3)'; return; }
+  const diff=nv-old;
+  el.textContent=(diff>=0?'+':'')+diff.toLocaleString();
+  el.style.color=diff>0?'var(--green)':diff<0?'var(--red)':'var(--text3)';
+}
+
+async function saveAllUpdates(){
+  const month=document.getElementById('update-month').value;
+  if(!month){ alert('Select a month first.'); return; }
+  let n=0;
+  const newHistoryRows=[];
+  allCards.filter(c=>c.status==='active').forEach(c=>{
+    const inp=document.getElementById(`upd-${c.id}`);
+    const note=document.getElementById(`note-${c.id}`)?.value||'';
+    if(inp&&inp.value!==''){
+      const nv=parseInt(inp.value);
+      if(!isNaN(nv)){
+        const entry={month,owner:c.owner,cardId:c.id,cardName:c.name,bank:c.bank,balance:nv,prev:c.points,change:nv-c.points,note};
+        allHistory.unshift(entry);
+        newHistoryRows.push({
+          month, owner:c.owner, card_id:c.id, card_name:c.name,
+          bank:c.bank, balance:nv, prev:c.points, change:nv-c.points, note:note||null
+        });
+        c.points=nv; c.lastUpdated=month; n++;
+      }
+    }
+  });
+  if(!n){ alert('No values entered.'); return; }
+  await saveCards();
+  try { await sb.from('history').insert(newHistoryRows); } catch(e){ console.error('history insert error',e); }
+  renderMain();
+  alert(`✅ Updated ${n} card${n!==1?'s':''} for ${month}`);
+}
+
+function renderHistoryTable(){
+  const f=document.getElementById('hf-person')?.value;
+  const rows=(f===undefined||f==='all'?allHistory:allHistory.filter(h=>h.owner===parseInt(f)))
+    .slice().reverse().slice(0,80);
+  const tbody=document.getElementById('history-tbody');
+  if(!tbody) return;
+  tbody.innerHTML=rows.length
+    ? rows.map(h=>`<tr>
+        <td class="mono">${h.month}</td>
+        <td style="color:${personColor(h.owner)}">${persons[h.owner]||h.owner}</td>
+        <td><span class="badge ${bankPillClass(h.bank)}" style="font-size:10px">${h.bank}</span></td>
+        <td>${h.cardName}</td>
+        <td class="mono">${h.balance.toLocaleString()}</td>
+        <td class="mono" style="color:${h.change>0?'var(--green)':h.change<0?'var(--red)':'var(--text3)'}">
+          ${h.change>=0?'+':''}${h.change.toLocaleString()}</td>
+        <td style="color:var(--text3);font-size:12px">${h.note||'—'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="7"><div class="empty">No history yet.</div></td></tr>';
+}
+
+/* ═══════════════════════════════
+   POINTS EXPIRY BATCHES
+═══════════════════════════════ */
+function buildExpiryBatchSection(){
+  const wrap=document.createElement('div');
+  const filterOwner=activePerson===-1?'all':activePerson;
+
+  // Stats
+  const now=new Date();
+  const in90=new Date(now); in90.setDate(in90.getDate()+90);
+  const in180=new Date(now); in180.setDate(in180.getDate()+180);
+  const in365=new Date(now); in365.setDate(in365.getDate()+365);
+
+  const filtered=allBatches.filter(b=>filterOwner==='all'||b.owner===filterOwner);
+  const exp90=filtered.filter(b=>new Date(b.expiryDate)<=in90);
+  const exp180=filtered.filter(b=>new Date(b.expiryDate)<=in180&&new Date(b.expiryDate)>in90);
+  const exp365=filtered.filter(b=>new Date(b.expiryDate)<=in365&&new Date(b.expiryDate)>in180);
+  const totalExpiringPts=filtered.reduce((s,b)=>s+b.points,0);
+  const totalExpiringMiles=filtered.reduce((s,b)=>{
+    const card=allCards.find(c=>c.id===b.cardId);
+    const ratio=card?card.ratio:1;
+    return s+Math.floor(b.points*ratio);
+  },0);
+
+  // Group by year-month for timeline
+  const byMonth={};
+  filtered.forEach(b=>{
+    const key=b.expiryDate.slice(0,7); // YYYY-MM
+    (byMonth[key]=byMonth[key]||[]).push(b);
+  });
+  const sortedMonths=Object.keys(byMonth).sort();
+
+  wrap.innerHTML=`
+    <div style="max-width:1100px">
+      <!-- HEADER + ADD BUTTON -->
+      <div class="section-header" style="margin-bottom:18px">
+        <div class="section-title"><span class="dot" style="background:var(--red)"></span>Points Expiry Tracker</div>
+        <button class="btn btn-primary btn-sm" onclick="openAddBatchModal()">+ Add Expiry Batch</button>
+      </div>
+
+      <!-- STAT CARDS -->
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:22px">
+        <div class="stat-card red">
+          <div class="stat-label">Expiring ≤ 90 days</div>
+          <div class="stat-value red" style="font-size:22px">${exp90.reduce((s,b)=>s+b.points,0).toLocaleString()}</div>
+          <div class="stat-sub">${exp90.length} batch${exp90.length!==1?'es':''}</div>
+        </div>
+        <div class="stat-card gold">
+          <div class="stat-label">Expiring ≤ 6 months</div>
+          <div class="stat-value gold" style="font-size:22px">${exp180.reduce((s,b)=>s+b.points,0).toLocaleString()}</div>
+          <div class="stat-sub">${exp180.length} batch${exp180.length!==1?'es':''}</div>
+        </div>
+        <div class="stat-card blue">
+          <div class="stat-label">Expiring ≤ 1 year</div>
+          <div class="stat-value blue" style="font-size:22px">${exp365.reduce((s,b)=>s+b.points,0).toLocaleString()}</div>
+          <div class="stat-sub">${exp365.length} batch${exp365.length!==1?'es':''}</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-label">Total Tracked</div>
+          <div class="stat-value purple" style="font-size:22px">${totalExpiringPts.toLocaleString()}</div>
+          <div class="stat-sub">≈ ${totalExpiringMiles.toLocaleString()} miles</div>
+        </div>
+      </div>
+
+      <!-- TIMELINE -->
+      ${sortedMonths.length===0 ? `
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:40px;text-align:center;color:var(--text3)">
+          <div style="font-size:28px;margin-bottom:8px">⏰</div>
+          <div style="font-size:14px">No expiry batches tracked yet.</div>
+          <div style="font-size:12px;margin-top:4px">Click <strong>+ Add Expiry Batch</strong> to start logging points from your bank app.</div>
+        </div>` :
+        sortedMonths.map(ym=>{
+          const batches=byMonth[ym];
+          const [yr,mo]=ym.split('-');
+          const monthLabel=new Date(parseInt(yr),parseInt(mo)-1,1).toLocaleString('default',{month:'long',year:'numeric'});
+          const expiryDt=new Date(parseInt(yr),parseInt(mo)-1,28);
+          const daysLeft=Math.ceil((expiryDt-now)/86400000);
+          const urgency=daysLeft<=90?'red':daysLeft<=180?'orange':daysLeft<=365?'gold':'ok';
+          const urgencyColor={'red':'var(--red)','orange':'var(--orange)','gold':'var(--gold2)','ok':'var(--text3)'}[urgency];
+          const monthPts=batches.reduce((s,b)=>s+b.points,0);
+          const monthMiles=batches.reduce((s,b)=>{
+            const card=allCards.find(c=>c.id===b.cardId);
+            const ratio=card?card.ratio:1;
+            return s+Math.floor(b.points*ratio);
+          },0);
+
+          return `
+          <div style="margin-bottom:16px">
+            <!-- Month header -->
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+              <div style="background:var(--surface2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;min-width:160px">
+                <div style="font-size:13px;font-weight:700;color:${urgencyColor}">${monthLabel}</div>
+                <div style="font-size:10px;color:var(--text3);margin-top:2px">${daysLeft>0?daysLeft+'d away':'This month'}</div>
+              </div>
+              <div style="flex:1;height:1px;background:var(--border)"></div>
+              <div style="font-family:var(--mono);font-size:12px;color:var(--text3)">${monthPts.toLocaleString()} pts · ≈ ${monthMiles.toLocaleString()} mi</div>
+            </div>
+            <!-- Batch rows -->
+            <div style="display:flex;flex-direction:column;gap:6px;padding-left:12px;border-left:3px solid ${urgencyColor}">
+              ${batches.map(b=>{
+                const card=allCards.find(c=>c.id===b.cardId);
+                const ratio=card?card.ratio:1;
+                const miles=Math.floor(b.points*ratio);
+                const isKFBatch=card&&(card.bank==='KrisFlyer'||card.isKF);
+                const bDays=Math.ceil((new Date(b.expiryDate)-now)/86400000);
+                return `
+                <div style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 14px;display:flex;align-items:center;gap:12px">
+                  <span class="badge ${bankPillClass(b.bank)}" style="font-size:10px;flex-shrink:0">${b.bank}</span>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:13px;font-weight:500">${b.cardName}</div>
+                    ${b.notes?`<div style="font-size:11px;color:var(--text3)">${b.notes}</div>`:''}
+                  </div>
+                  <div style="text-align:right;flex-shrink:0">
+                    <div style="font-family:var(--mono);font-size:13px;font-weight:700;color:${urgencyColor}">${b.points.toLocaleString()} ${isKFBatch?'mi':'pts'}</div>
+                    <div style="font-size:11px;color:var(--text3)">${isKFBatch?'KrisFlyer miles':'≈ '+miles.toLocaleString()+' mi'}</div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;min-width:60px">
+                    <span class="badge ${bDays<=90?'b-red':bDays<=180?'b-orange':bDays<=365?'b-gold':'b-gray'}" style="font-size:10px">${b.expiryDate}</span>
+                    <div style="font-size:10px;color:var(--text3);margin-top:2px">${persons[b.owner]}</div>
+                  </div>
+                  <button class="btn btn-danger btn-sm" onclick="deleteBatch(${b.id})" style="flex-shrink:0">✕</button>
+                </div>`;
+              }).join('')}
+            </div>
+          </div>`;
+        }).join('')
+      }
+    </div>
+  `;
+  return wrap;
+}
+
+async function deleteBatch(id){
+  if(!confirm('Remove this expiry batch?')) return;
+  allBatches=allBatches.filter(b=>b.id!==id);
+  await deleteBatchFromDB(id);
+  renderMain();
+}
+
+function openAddBatchModal(){
+  document.getElementById('batch-modal').classList.add('open');
+  // Populate card dropdown
+  const sel=document.getElementById('b-card');
+  const cards=allCards.filter(c=>c.status==='active');
+  sel.innerHTML=`<option value="">— select card —</option>`+
+    cards.map(c=>`<option value="${c.id}" data-owner="${c.owner}" data-bank="${c.bank}" data-name="${c.name}">${persons[c.owner]} · ${c.bank} ${c.name}</option>`).join('');
+  document.getElementById('b-points').value='';
+  document.getElementById('b-expiry').value='';
+  document.getElementById('b-notes').value='';
+}
+
+function closeBatchModal(){ document.getElementById('batch-modal').classList.remove('open'); }
+
+async function saveBatchEntry(){
+  const sel=document.getElementById('b-card');
+  const opt=sel.options[sel.selectedIndex];
+  if(!opt||!opt.value){ alert('Select a card.'); return; }
+  const pts=parseInt(document.getElementById('b-points').value);
+  const expiry=document.getElementById('b-expiry').value;
+  if(!pts||pts<=0){ alert('Enter a valid points amount.'); return; }
+  if(!expiry){ alert('Select an expiry month.'); return; }
+  // Convert YYYY-MM to last day of that month for expiry_date
+  const [yr,mo]=expiry.split('-');
+  const expiryDate=new Date(parseInt(yr),parseInt(mo),0); // last day of month
+  const expiryDateStr=expiryDate.toISOString().split('T')[0];
+
+  const batch={
+    cardId:   opt.value,
+    owner:    parseInt(opt.dataset.owner),
+    bank:     opt.dataset.bank,
+    cardName: opt.dataset.name,
+    points:   pts,
+    expiryMonth: expiry,
+    expiryDate:  expiryDateStr,
+    notes:    document.getElementById('b-notes').value,
+  };
+  await saveBatch(batch);
+  // Reload from DB to get the auto-generated id
+  const {data}=await sb.from('point_batches').select('*').order('expiry_date');
+  if(data) allBatches=data.map(r=>({
+    id:r.id, cardId:r.card_id, owner:r.owner, bank:r.bank,
+    cardName:r.card_name, points:r.points, expiryMonth:r.expiry_month,
+    expiryDate:r.expiry_date, notes:r.notes||'',
+  }));
+  closeBatchModal();
+  renderMain();
+}
+
+/* ═══════════════════════════════
+   REMINDERS
+═══════════════════════════════ */
+function buildRemindersSection(){
+  const wrap=document.createElement('div');
+  const rows=[];
+  allCards.filter(c=>c.status==='active').forEach(c=>{
+    const d=getExpiryDays(c);
+    if(d!==null&&d<=90&&d>=0)
+      rows.push({person:persons[c.owner],pi:c.owner,card:c.name,bank:c.bank,action:'Convert or use points before expiry',due:`${c.expiry} (${d}d)`,pri:d<=30?'Critical':'High',pc:d<=30?'b-red':'b-orange'});
+    const fd=getFeeCountdown(c);
+    if(fd!==null&&fd<=90)
+      rows.push({person:persons[c.owner],pi:c.owner,card:c.name,bank:c.bank,action:`Annual fee due — check waiver`,due:`${c.feemonth} (${fd}d)`,pri:fd<=30?'High':'Medium',pc:fd<=30?'b-orange':'b-gold'});
+    const m=getMiles(c);
+    if(m>=15000&&c.ratio>0)
+      rows.push({person:persons[c.owner],pi:c.owner,card:c.name,bank:c.bank,action:`${m.toLocaleString()} miles ready to transfer to KrisFlyer`,due:'Anytime',pri:'Tip',pc:'b-blue'});
+  });
+
+  const colCount=Math.min(persons.length+1,3);
+
+  wrap.innerHTML=`
+    <div style="display:grid;grid-template-columns:repeat(${colCount},1fr);gap:14px;margin-bottom:20px">
+      ${persons.map((p,pi)=>{
+        const pCards=allCards.filter(c=>c.owner===pi&&c.status==='active');
+        const expSoon=pCards.filter(c=>{const d=getExpiryDays(c);return d!==null&&d<=90&&d>=0;}).sort((a,b)=>getExpiryDays(a)-getExpiryDays(b));
+        const feeSoon=pCards.filter(c=>{const d=getFeeCountdown(c);return d!==null&&d<=90;}).sort((a,b)=>getFeeCountdown(a)-getFeeCountdown(b));
+        return `
+        <div class="alert-card">
+          <div class="section-title" style="margin-bottom:10px">
+            <span class="dot" style="background:${personColor(pi)}"></span>
+            ${p}
+          </div>
+          ${expSoon.map(c=>`<div class="alert-item"><div class="alert-icon ai-danger">⏰</div><div><div class="alert-title"><span style="font-size:10px;color:var(--text3)">${c.bank} ·</span> ${c.name}</div><div class="alert-sub">${c.points.toLocaleString()} pts · ${getExpiryDays(c)}d left</div></div></div>`).join('')||''}
+          ${feeSoon.map(c=>`<div class="alert-item"><div class="alert-icon ai-warn">📅</div><div><div class="alert-title"><span style="font-size:10px;color:var(--text3)">${c.bank} ·</span> ${c.name}</div><div class="alert-sub">Fee due: ${c.feemonth} · ${getFeeCountdown(c)}d away</div></div></div>`).join('')||''}
+          ${!expSoon.length&&!feeSoon.length?'<div style="color:var(--text3);font-size:12px;padding:8px 0">All clear ✅</div>':''}
+        </div>`;
+      }).join('')}
+
+      <div class="alert-card">
+        <div class="section-title" style="margin-bottom:10px"><span class="dot" style="background:var(--gold)"></span>Top Miles to Transfer</div>
+        ${allCards.filter(c=>c.status==='active').sort((a,b)=>getMiles(b)-getMiles(a)).slice(0,4).map(c=>`
+          <div class="alert-item">
+            <div class="alert-icon ai-info">✈️</div>
+            <div>
+              <div class="alert-title">${getMiles(c).toLocaleString()} mi — ${persons[c.owner]}</div>
+              <div class="alert-sub"><span style="color:var(--text2)">${c.bank}</span> · ${c.name} · ${ratioBadge(c.ratio)}</div>
+            </div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="table-wrap">
+      <table><thead><tr>
+        <th>Person</th><th>Bank</th><th>Card</th><th>Action</th><th>Due / Notes</th><th>Priority</th>
+      </tr></thead><tbody>
+      ${rows.length
+        ? rows.map(r=>`<tr>
+            <td style="color:${personColor(r.pi)};font-weight:600">${r.person}</td>
+            <td><span class="badge ${bankPillClass(r.bank)}" style="font-size:10px">${r.bank}</span></td>
+            <td><strong>${r.card}</strong></td>
+            <td>${r.action}</td>
+            <td style="color:var(--text3);font-size:12px">${r.due}</td>
+            <td><span class="badge ${r.pc}">${r.pri}</span></td>
+          </tr>`).join('')
+        : '<tr><td colspan="6"><div class="empty">No reminders — all clear! ✅</div></td></tr>'}
+      </tbody></table>
+    </div>`;
+  return wrap;
+}
+
+/* ═══════════════════════════════
+   PLAN TRIP — REDEMPTION PLANNER
+═══════════════════════════════ */
+
+function getSoonestBatchExpiry(cardIds){
+  // Returns the soonest expiry date string across all batches for given card IDs
+  const batches=allBatches.filter(b=>cardIds.includes(b.cardId)&&b.points>0);
+  if(!batches.length) return '';
+  return batches.map(b=>b.expiryDate).sort()[0];
+}
+
+function getBatchExpiringPoints(cardIds, withinDays=90){
+  // Returns total points in batches expiring within N days for given card IDs
+  const cutoff=new Date(); cutoff.setDate(cutoff.getDate()+withinDays);
+  return allBatches
+    .filter(b=>cardIds.includes(b.cardId)&&new Date(b.expiryDate)<=cutoff&&b.points>0)
+    .reduce((s,b)=>s+b.points,0);
+}
+
+// Transfer metadata per bank/card
+const TRANSFER_META = {
+  'DBS':       { fee:27.25, minPts:5000,  ptsPerMile:0.5,  feePerSession:true, pool:true,  time:'1-3 days' },
+  'UOB':       { fee:25,    minPts:5000,  ptsPerMile:0.5,  feePerSession:true, pool:true,  time:'1-3 days' },
+  'Citi':      { fee:27.25, minPts:25000, ptsPerMile:2.5,  feePerSession:true, pool:false, time:'3-5 days' },
+  'HSBC':      { fee:0,     minPts:30000, ptsPerMile:3,    feePerSession:true, pool:false, time:'Instant'  },
+  'OCBC-90N':  { fee:25,    minPts:1000,  ptsPerMile:1,    feePerSession:true, pool:false, time:'3-5 days' },
+  'OCBC-Rewards':{ fee:25,  minPts:25000, ptsPerMile:2.5,  feePerSession:true, pool:false, time:'3-5 days' },
+  'Max Miles': { fee:0,     minPts:1000,  ptsPerMile:1,    feePerSession:true, pool:false, time:'Instant'  },
+  'KrisFlyer': { fee:0,     minPts:0,     ptsPerMile:1,    feePerSession:true, pool:false, time:'Ready'    },
+};
+
+// Award chart: miles from Zone 1 (Singapore) — one-way, in actual miles (not thousands)
+const AWARD_CHART = {
+  zones: [
+    { id:2,  label:'Malaysia / Indonesia / Brunei',         ecoSaver:8000,  ecoBusiness:22000, bizSaver:22000,  bizAdv:40500,  firstSaver:32000, ecoAdv:16500 },
+    { id:3,  label:'Thailand / Vietnam / Philippines / Myanmar / Cambodia', ecoSaver:13000, ecoBusiness:25000, bizSaver:25000, bizAdv:46000, firstSaver:38000, ecoAdv:27500 },
+    { id:4,  label:'China / Hong Kong / Taiwan',            ecoSaver:15500, ecoBusiness:35500, bizSaver:35500,  bizAdv:84000,  firstSaver:47500, ecoAdv:33000 },
+    { id:5,  label:'North China (Beijing / Shanghai)',      ecoSaver:20500, ecoBusiness:45000, bizSaver:45000,  bizAdv:112500, firstSaver:61500, ecoAdv:44000 },
+    { id:6,  label:'India / Sri Lanka / Maldives / Nepal',  ecoSaver:19000, ecoBusiness:45000, bizSaver:45000,  bizAdv:112500, firstSaver:61500, ecoAdv:40500 },
+    { id:7,  label:'Japan / South Korea',                   ecoSaver:25500, ecoBusiness:54500, bizSaver:54500,  bizAdv:80500,  firstSaver:81000, ecoAdv:49500 },
+    { id:8,  label:'Australia (Perth / Darwin)',            ecoSaver:20500, ecoBusiness:42500, bizSaver:42500,  bizAdv:114500, firstSaver:60500, ecoAdv:40500 },
+    { id:9,  label:'Australia (excl. Perth) / New Zealand', ecoSaver:29000, ecoBusiness:72000, bizSaver:72000,  bizAdv:103500, firstSaver:98000, ecoAdv:60500 },
+    { id:10, label:'Middle East / Africa / Turkey',         ecoSaver:32000, ecoBusiness:68000, bizSaver:68000,  bizAdv:171000, firstSaver:95000, ecoAdv:66500 },
+    { id:11, label:'Europe',                                ecoSaver:44000, ecoBusiness:108500,bizSaver:108500, bizAdv:141500, firstSaver:148000,ecoAdv:79000 },
+    { id:12, label:'USA West Coast',                        ecoSaver:44000, ecoBusiness:112500,bizSaver:112500, bizAdv:148000, firstSaver:154000,ecoAdv:79000 },
+    { id:13, label:'USA East Coast',                        ecoSaver:46000, ecoBusiness:117000,bizSaver:117000, bizAdv:165000, firstSaver:156000,ecoAdv:84500 },
+  ]
+};
+
+function getMilesNeeded(zoneId, cabin, awardType, pax, tripType){
+  const zone=AWARD_CHART.zones.find(z=>z.id===zoneId);
+  if(!zone) return 0;
+  const key = cabin==='economy'
+    ? (awardType==='saver'?'ecoSaver':'ecoAdv')
+    : cabin==='business'
+    ? (awardType==='saver'?'bizSaver':'bizAdv')
+    : cabin==='first'
+    ? 'firstSaver'
+    : 'ecoSaver';
+  const oneway = (zone[key]||0) * pax;
+  return tripType==='return' ? oneway*2 : oneway;
+}
+
+// Get transfer sources for a person (or both), grouped sensibly
+function getTransferSources(owners){
+  const CONVERTED=['KrisFlyer','Max Miles'];
+  const sources=[];
+
+  // KrisFlyer balances first (ready to use, no fee)
+  owners.forEach(pi=>{
+    allCards.filter(c=>c.owner===pi&&c.status==='active'&&(c.bank==='KrisFlyer'||c.isKF)&&c.points>0).forEach(c=>{
+      sources.push({key:'KrisFlyer',label:`${persons[pi]} · KrisFlyer Account`,owner:pi,points:c.points,milesAvail:c.points,fee:0,minPts:0,time:'Ready',freeConvert:true,expiry:c.expiry,cardId:c.id});
+    });
+  });
+
+  // Max Miles (free, instant)
+  owners.forEach(pi=>{
+    allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='Max Miles'&&c.points>0).forEach(c=>{
+      sources.push({key:'Max Miles',label:`${persons[pi]} · Max Miles`,owner:pi,points:c.points,milesAvail:c.points,fee:0,minPts:1000,time:'Instant',freeConvert:true,expiry:c.expiry,cardId:c.id});
+    });
+  });
+
+  // DBS pool per person
+  owners.forEach(pi=>{
+    const dbs=allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='DBS'&&!CONVERTED.includes(c.bank));
+    if(dbs.length){
+      const totalPts=dbs.reduce((s,c)=>s+c.points,0);
+      const meta=TRANSFER_META['DBS'];
+      const blocks=Math.floor(totalPts/meta.minPts);
+      const milesAvail=blocks*(meta.minPts/meta.ptsPerMile);
+      const expiry=getSoonestBatchExpiry(dbs.map(c=>c.id)) || dbs.map(c=>c.expiry).filter(Boolean).sort()[0]||'';
+      const expiringPts=getBatchExpiringPoints(dbs.map(c=>c.id));
+      if(totalPts>0) sources.push({key:'DBS',label:`${persons[pi]} · DBS (Altitude + Womans pooled)`,owner:pi,points:totalPts,milesAvail,fee:meta.fee,minPts:meta.minPts,minMiles:meta.minPts/meta.ptsPerMile,time:meta.time,freeConvert:false,expiry,expiringPts,cards:dbs.map(c=>c.name).join(' + ')});
+    }
+  });
+
+  // UOB pool per person
+  owners.forEach(pi=>{
+    const uob=allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='UOB'&&c.pool&&!CONVERTED.includes(c.bank));
+    if(uob.length){
+      const totalPts=uob.reduce((s,c)=>s+c.points,0);
+      const meta=TRANSFER_META['UOB'];
+      const blocks=Math.floor(totalPts/meta.minPts);
+      const milesAvail=blocks*(meta.minPts/meta.ptsPerMile);
+      const expiry=getSoonestBatchExpiry(uob.map(c=>c.id)) || uob.map(c=>c.expiry).filter(Boolean).sort()[0]||'';
+      const expiringPts=getBatchExpiringPoints(uob.map(c=>c.id));
+      if(totalPts>0) sources.push({key:'UOB',label:`${persons[pi]} · UOB Points (pooled)`,owner:pi,points:totalPts,milesAvail,fee:meta.fee,minPts:meta.minPts,minMiles:meta.minPts/meta.ptsPerMile,time:meta.time,freeConvert:false,expiry,expiringPts,cards:uob.map(c=>c.name).join(' + ')});
+    }
+  });
+
+  // Citi per person
+  owners.forEach(pi=>{
+    allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='Citi'&&c.points>0).forEach(c=>{
+      const meta=TRANSFER_META['Citi'];
+      const blocks=Math.floor(c.points/meta.minPts);
+      const milesAvail=blocks*(meta.minPts/meta.ptsPerMile);
+      const expiry=getSoonestBatchExpiry([c.id])||c.expiry||'';
+      const expiringPts=getBatchExpiringPoints([c.id]);
+      sources.push({key:'Citi',label:`${persons[pi]} · Citi ${c.name}`,owner:pi,points:c.points,milesAvail,fee:meta.fee,minPts:meta.minPts,minMiles:meta.minPts/meta.ptsPerMile,time:meta.time,freeConvert:false,expiry,expiringPts,cards:c.name});
+    });
+  });
+
+  // HSBC per person
+  owners.forEach(pi=>{
+    allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='HSBC'&&c.points>0).forEach(c=>{
+      const meta=TRANSFER_META['HSBC'];
+      const blocks=Math.floor(c.points/meta.minPts);
+      const milesAvail=blocks*(meta.minPts/meta.ptsPerMile);
+      const expiry=getSoonestBatchExpiry([c.id])||c.expiry||'';
+      const expiringPts=getBatchExpiringPoints([c.id]);
+      if(blocks>0) sources.push({key:'HSBC',label:`${persons[pi]} · HSBC ${c.name}`,owner:pi,points:c.points,milesAvail,fee:meta.fee,minPts:meta.minPts,minMiles:meta.minPts/meta.ptsPerMile,time:meta.time,freeConvert:true,expiry,expiringPts,cards:c.name});
+    });
+  });
+
+  // OCBC 90N per person
+  owners.forEach(pi=>{
+    allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='OCBC'&&c.name==='90N'&&c.points>0).forEach(c=>{
+      const meta=TRANSFER_META['OCBC-90N'];
+      const blocks=Math.floor(c.points/meta.minPts);
+      const milesAvail=blocks*(meta.minPts/meta.ptsPerMile);
+      const expiry=getSoonestBatchExpiry([c.id])||c.expiry||'';
+      const expiringPts=getBatchExpiringPoints([c.id]);
+      sources.push({key:'OCBC-90N',label:`${persons[pi]} · OCBC 90N`,owner:pi,points:c.points,milesAvail,fee:meta.fee,minPts:meta.minPts,minMiles:meta.minPts/meta.ptsPerMile,time:meta.time,freeConvert:false,expiry,expiringPts,cards:c.name});
+    });
+  });
+
+  // OCBC Rewards per person
+  owners.forEach(pi=>{
+    allCards.filter(c=>c.owner===pi&&c.status==='active'&&c.bank==='OCBC'&&c.name==='Rewards'&&c.points>0).forEach(c=>{
+      const meta=TRANSFER_META['OCBC-Rewards'];
+      const blocks=Math.floor(c.points/meta.minPts);
+      const milesAvail=blocks*(meta.minPts/meta.ptsPerMile);
+      const expiry=getSoonestBatchExpiry([c.id])||c.expiry||'';
+      const expiringPts=getBatchExpiringPoints([c.id]);
+      if(blocks>0) sources.push({key:'OCBC-Rewards',label:`${persons[pi]} · OCBC Rewards ($)`,owner:pi,points:c.points,milesAvail,fee:meta.fee,minPts:meta.minPts,minMiles:meta.minPts/meta.ptsPerMile,time:meta.time,freeConvert:false,expiry,expiringPts,cards:c.name});
+    });
+  });
+
+  return sources;
+}
+
+// Optimise sources with correct priority:
+// 1. KrisFlyer balance (ready, free)
+// 2. Expiring soonest (waste prevention beats fee saving)
+// 3. Max Miles (free, instant)
+// 4. HSBC (free conversion)
+// 5. Remaining paid sources sorted by fee/milesAvail (cheapest $ per available mile from that source)
+// 6. OCBC 90N last (worst value — S$25 for potentially very few miles)
+function optimiseSources(sources, milesNeeded){
+  let remaining=milesNeeded;
+  const plan=[];
+
+  // Bucket 1: KrisFlyer (already converted, free)
+  const kf=sources.filter(s=>s.key==='KrisFlyer');
+
+  // Bucket 2: Sources with batch points expiring within 90 days — sorted by soonest expiry
+  const expiring=sources
+    .filter(s=>s.key!=='KrisFlyer' && s.expiry && getExpiryDaysRaw(s.expiry)<=90 && (s.expiringPts>0||getExpiryDaysRaw(s.expiry)<=90))
+    .sort((a,b)=>getExpiryDaysRaw(a.expiry)-getExpiryDaysRaw(b.expiry));
+
+  // Bucket 3: Max Miles (free, instant)
+  const maxMiles=sources.filter(s=>s.key==='Max Miles');
+
+  // Bucket 4: HSBC (free conversion, but large min block)
+  const hsbc=sources.filter(s=>s.key==='HSBC');
+
+  // Bucket 5: Remaining paid sources — sort by fee ÷ milesAvail (cheapest $ per available mile)
+  // Lower = better value per session
+  const usedKeys=new Set([...kf,...expiring,...maxMiles,...hsbc].map(s=>s.label));
+  const paid=sources
+    .filter(s=>!usedKeys.has(s.label) && s.key!=='OCBC-90N' && s.milesAvail>0)
+    .sort((a,b)=>{
+      const ratioA = a.milesAvail>0 ? a.fee/a.milesAvail : 999;
+      const ratioB = b.milesAvail>0 ? b.fee/b.milesAvail : 999;
+      return ratioA-ratioB;
+    });
+
+  // Bucket 6: OCBC 90N last (flat S$25 for potentially small blocks)
+  const ocbc90n=sources.filter(s=>s.key==='OCBC-90N' && !usedKeys.has(s.label));
+
+  const ordered=[...kf,...expiring,...maxMiles,...hsbc,...paid,...ocbc90n];
+
+  for(const src of ordered){
+    if(remaining<=0) break;
+    if(src.milesAvail<=0) continue;
+    const minMiles=src.minMiles||1;
+    // How many miles do we need from this source (don't over-convert)
+    const milesWanted=Math.min(src.milesAvail, remaining);
+    // Round up to nearest block
+    const blocks=Math.ceil(milesWanted/minMiles);
+    const milesFromThis=Math.min(blocks*minMiles, src.milesAvail);
+    // Points to convert = blocks × minPts (one session, flat fee)
+    const ptsToConvert=Math.min(blocks*src.minPts, src.points);
+    plan.push({
+      ...src,
+      useBlocks:blocks,
+      milesFromThis,
+      ptsToConvert,
+      actualMiles:milesFromThis,
+      priorityReason: src.key==='KrisFlyer'?'Already converted'
+        : src.expiry&&getExpiryDaysRaw(src.expiry)<=90?`⚠ Expiring in ${getExpiryDaysRaw(src.expiry)}d`
+        : src.key==='Max Miles'?'Free · Instant'
+        : src.key==='HSBC'?'Free conversion'
+        : src.key==='OCBC-90N'?'Last resort'
+        : `S$${src.fee} flat fee`,
+    });
+    remaining-=milesFromThis;
+  }
+
+  return {plan, shortfall:Math.max(0,Math.ceil(remaining))};
+}
+
+function calcSQBookingDate(){
+  const val=document.getElementById('sq-travel-date')?.value;
+  const el=document.getElementById('sq-booking-result');
+  if(!el) return;
+  if(!val){ el.innerHTML='<span style="color:var(--text3)">← enter a date</span>'; return; }
+
+  const travel=new Date(val);
+  const today=new Date(); today.setHours(0,0,0,0);
+  const bookingOpen=new Date(travel); bookingOpen.setDate(bookingOpen.getDate()-355);
+  const daysUntilOpen=Math.ceil((bookingOpen-today)/86400000);
+  const fmt=d=>d.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+
+  if(daysUntilOpen<=0){
+    // Already open
+    const daysLeft=Math.ceil((travel-today)/86400000);
+    el.innerHTML=`<span style="color:var(--green);font-weight:700">✅ Window open now!</span>
+      <span style="font-size:11px;color:var(--text3);margin-left:6px">Travel in ${daysLeft}d · Book immediately on singaporeair.com</span>`;
+  } else {
+    // Not open yet
+    const urgency=daysUntilOpen<=30?'var(--orange)':daysUntilOpen<=90?'var(--gold2)':'var(--accent2)';
+    el.innerHTML=`<span style="font-family:var(--mono);font-weight:700;color:${urgency}">${fmt(bookingOpen)}</span>
+      <span style="font-size:11px;color:var(--text3);margin-left:6px">opens in ${daysUntilOpen}d</span>`;
+  }
+}
+
+function getExpiryDaysRaw(expiry){
+  if(!expiry) return 9999;
+  return Math.ceil((new Date(expiry)-new Date())/86400000);
+}
+
+function buildPlanSection(){
+  const wrap=document.createElement('div');
+
+  // 355-day rolling window
+  const today=new Date();
+  const bookableUntil=new Date(today); bookableUntil.setDate(bookableUntil.getDate()+355);
+  const fmt=d=>d.toLocaleDateString('en-SG',{day:'numeric',month:'short',year:'numeric'});
+  const daysToYearEnd=355;
+
+  wrap.innerHTML=`
+    <div style="max-width:900px;margin:0 auto">
+
+      <!-- SQ BOOKING WINDOW BAR -->
+      <div style="background:var(--surface);border:1px solid var(--border2);border-radius:10px;padding:14px 18px;margin-bottom:18px;display:flex;align-items:center;gap:0;flex-wrap:wrap;row-gap:10px">
+        <!-- Rolling counter -->
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:280px">
+          <div style="font-size:22px">📅</div>
+          <div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px">Book today for flights departing up to</div>
+            <div style="font-family:var(--mono);font-size:17px;font-weight:700;color:var(--accent2)">${fmt(bookableUntil)}</div>
+            <div style="font-size:11px;color:var(--text3);margin-top:1px">SQ opens redemptions 355 days before departure</div>
+          </div>
+        </div>
+        <!-- Divider -->
+        <div style="width:1px;height:44px;background:var(--border2);margin:0 20px;flex-shrink:0"></div>
+        <!-- Travel date input -->
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:280px">
+          <div>
+            <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px">When do you want to travel?</div>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="date" id="sq-travel-date" style="width:160px"
+                min="${today.toISOString().split('T')[0]}"
+                oninput="calcSQBookingDate()">
+              <div id="sq-booking-result" style="font-size:13px;color:var(--text3)">← enter a date</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HEADER -->
+      <div class="section-header" style="margin-bottom:20px">
+        <div class="section-title"><span class="dot" style="background:var(--accent2)"></span>Redemption Planner</div>
+        <div style="font-size:12px;color:var(--text3)">Based on KrisFlyer Saver/Advantage chart (effective 1 Nov 2025)</div>
+      </div>
+
+      <!-- TRIP FORM -->
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:20px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px">
+
+          <div class="form-group">
+            <label>Travelling</label>
+            <select id="plan-who">
+              ${persons.map((p,i)=>`<option value="${i}">${p}</option>`).join('')}
+              ${persons.length>1?`<option value="all">Both (${persons.join(' + ')})</option>`:''}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Destination</label>
+            <select id="plan-zone">
+              <option value="">— select destination —</option>
+              ${AWARD_CHART.zones.map(z=>`<option value="${z.id}">${z.label}</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Trip Type</label>
+            <select id="plan-trip">
+              <option value="oneway">One-way</option>
+              <option value="return">Return (×2 miles)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Cabin Class</label>
+            <select id="plan-cabin">
+              <option value="economy">Economy</option>
+              <option value="business">Business</option>
+              <option value="first">First / Suites</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Award Type</label>
+            <select id="plan-award">
+              <option value="saver">Saver (less miles, limited seats)</option>
+              <option value="advantage">Advantage (more miles, more seats)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Passengers</label>
+            <select id="plan-pax">
+              <option value="1">1 pax</option>
+              <option value="2">2 pax</option>
+              <option value="3">3 pax</option>
+              <option value="4">4 pax</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="runRedemptionPlan()" style="width:100%;padding:10px">Calculate Best Way to Redeem ✈</button>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="plan-results"></div>
+    </div>
+  `;
+  return wrap;
+}
+
+function runRedemptionPlan(){
+  const whoVal=document.getElementById('plan-who').value;
+  const zoneId=parseInt(document.getElementById('plan-zone').value);
+  const tripType=document.getElementById('plan-trip').value;
+  const cabin=document.getElementById('plan-cabin').value;
+  const awardType=document.getElementById('plan-award').value;
+  const pax=parseInt(document.getElementById('plan-pax').value);
+
+  if(!zoneId){ alert('Please select a destination.'); return; }
+
+  const zone=AWARD_CHART.zones.find(z=>z.id===zoneId);
+  const cabinLabel={'economy':'Economy','business':'Business Class','first':'First Class / Suites'}[cabin];
+  const awardLabel=awardType==='saver'?'Saver':'Advantage';
+  const tripLabel=tripType==='return'?'Return':'One-way';
+  const el=document.getElementById('plan-results');
+
+  // Single person — straightforward
+  if(whoVal!=='all'){
+    const pi=parseInt(whoVal);
+    const milesNeeded=getMilesNeeded(zoneId,cabin,awardType,pax,tripType);
+    const sources=getTransferSources([pi]);
+    const {plan,shortfall}=optimiseSources(sources,milesNeeded);
+    const totalFees=plan.filter(p=>!p.freeConvert).reduce((s,p)=>s+p.fee,0);
+    const totalAvailMiles=sources.reduce((s,x)=>s+x.milesAvail,0);
+    const canCover=shortfall<=0;
+    el.innerHTML=renderScenario({
+      title:`${persons[pi]}'s booking`,
+      subtitle:`${pax} pax · ${cabinLabel} · ${awardLabel} · ${tripLabel} · ${zone.label}`,
+      milesNeeded, totalAvailMiles, shortfall, canCover,
+      plan, sources, totalFees, zone, cabinLabel, awardLabel, pax, tripType
+    });
+    return;
+  }
+
+  // Both — show 3 scenarios
+  const milesFor2=getMilesNeeded(zoneId,cabin,awardType,2,tripType);
+  const milesFor1=getMilesNeeded(zoneId,cabin,awardType,1,tripType);
+
+  const scenarios=persons.map((p,pi)=>{
+    // Scenario A: this person books for BOTH
+    const sourcesAll=getTransferSources([pi]);
+    const planAll=optimiseSources(sourcesAll,milesFor2);
+    const feesAll=planAll.plan.filter(p=>!p.freeConvert).reduce((s,p)=>s+p.fee,0);
+    const availAll=sourcesAll.reduce((s,x)=>s+x.milesAvail,0);
+    return {
+      pi, name:p,
+      milesNeeded:milesFor2,
+      sources:sourcesAll,
+      plan:planAll.plan,
+      shortfall:planAll.shortfall,
+      canCover:planAll.shortfall<=0,
+      totalFees:feesAll,
+      totalAvailMiles:availAll,
+    };
+  });
+
+  // Scenario C: each books own 1 ticket
+  const splitScenario=persons.map((p,pi)=>{
+    const src=getTransferSources([pi]);
+    const result=optimiseSources(src,milesFor1);
+    return {
+      pi, name:p,
+      plan:result.plan,
+      shortfall:result.shortfall,
+      canCover:result.shortfall<=0,
+      totalFees:result.plan.filter(p=>!p.freeConvert).reduce((s,p)=>s+p.fee,0),
+      sources:src,
+    };
+  });
+  const splitCanCover=splitScenario.every(s=>s.canCover);
+  const splitTotalFees=splitScenario.reduce((s,x)=>s+x.totalFees,0);
+
+  el.innerHTML=`
+    <!-- SCENARIO COMPARISON -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:20px">
+      <div class="section-title" style="margin-bottom:14px"><span class="dot" style="background:var(--gold)"></span>Which booking scenario works best?</div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+
+        ${scenarios.map(s=>`
+          <div style="background:var(--surface2);border:1px solid ${s.canCover?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'};border-radius:10px;padding:14px">
+            <div style="font-size:11px;font-weight:700;color:${personColor(s.pi)};text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">${s.name} books both tickets</div>
+            <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:${s.canCover?'var(--green)':'var(--red)'};">${s.canCover?'✅ Can cover':'⚠ Short'}</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:4px">Needs ${milesFor2.toLocaleString()} miles</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:2px">Has ${s.totalAvailMiles.toLocaleString()} avail</div>
+            ${!s.canCover?`<div style="font-size:11px;color:var(--red);margin-top:2px">Short ${s.shortfall.toLocaleString()} miles</div>`:''}
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border)">
+              <span style="font-size:11px;color:var(--text3)">Conversion fees: </span>
+              <span style="font-family:var(--mono);font-size:12px;font-weight:700;color:${s.totalFees>0?'var(--gold2)':'var(--green)'}">${s.totalFees>0?'S$'+s.totalFees.toFixed(2):'Free'}</span>
+            </div>
+          </div>`).join('')}
+
+        <div style="background:var(--surface2);border:1px solid ${splitCanCover?'rgba(16,185,129,.3)':'rgba(239,68,68,.3)'};border-radius:10px;padding:14px;grid-column:1/-1">
+          <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px">Each person books their own ticket (recommended if both have enough)</div>
+          <div style="display:flex;gap:20px;flex-wrap:wrap">
+            ${splitScenario.map(s=>`
+              <div>
+                <span style="color:${personColor(s.pi)};font-weight:600">${s.name}:</span>
+                <span style="font-family:var(--mono);font-size:13px;color:${s.canCover?'var(--green)':'var(--red)'}"> ${s.canCover?'✅':'⚠'} ${milesFor1.toLocaleString()} miles needed</span>
+                <span style="font-size:11px;color:var(--text3)"> · fees: ${s.totalFees>0?'S$'+s.totalFees.toFixed(2):'Free'}</span>
+              </div>`).join('')}
+            <div style="margin-left:auto;font-family:var(--mono);font-size:13px;font-weight:700;color:${splitTotalFees>0?'var(--gold2)':'var(--green)'}">
+              Total fees: ${splitTotalFees>0?'S$'+splitTotalFees.toFixed(2):'Free'}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DETAILED PLAN PER SCENARIO -->
+    ${scenarios.map(s=>`
+      <div style="margin-bottom:24px">
+        <div class="section-header" style="margin-bottom:12px">
+          <div class="section-title">
+            <span class="dot" style="background:${personColor(s.pi)}"></span>
+            ${s.name} books both — detailed plan
+          </div>
+          <span class="badge ${s.canCover?'b-green':'b-red'}">${s.canCover?'Feasible':'Not enough miles'}</span>
+        </div>
+        ${renderPlanTable(s.plan, s.shortfall, s.canCover)}
+      </div>`).join('')}
+
+    <div style="margin-bottom:24px">
+      <div class="section-header" style="margin-bottom:12px">
+        <div class="section-title"><span class="dot" style="background:var(--text2)"></span>Each books own — detailed plan</div>
+        <span class="badge ${splitCanCover?'b-green':'b-red'}">${splitCanCover?'Both feasible':'One or both short'}</span>
+      </div>
+      ${splitScenario.map(s=>`
+        <div style="margin-bottom:14px">
+          <div style="font-size:12px;font-weight:700;color:${personColor(s.pi)};margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">${s.name} · 1 ticket · ${milesFor1.toLocaleString()} miles needed</div>
+          ${renderPlanTable(s.plan, s.shortfall, s.canCover)}
+        </div>`).join('')}
+    </div>
+  `;
+}
+
+function renderScenario({title,subtitle,milesNeeded,totalAvailMiles,shortfall,canCover,plan,sources,totalFees,zone,cabinLabel,awardLabel,pax,tripType}){
+  return `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px">
+      <div class="stat-card blue">
+        <div class="stat-label">Miles Needed</div>
+        <div class="stat-value blue" style="font-size:20px">${milesNeeded.toLocaleString()}</div>
+        <div class="stat-sub">${subtitle}</div>
+      </div>
+      <div class="stat-card ${canCover?'green':'red'}">
+        <div class="stat-label">Miles Available</div>
+        <div class="stat-value ${canCover?'green':'red'}" style="font-size:20px">${totalAvailMiles.toLocaleString()}</div>
+        <div class="stat-sub">${canCover?`Surplus: ${(totalAvailMiles-milesNeeded).toLocaleString()}`:`Short: ${shortfall.toLocaleString()}`}</div>
+      </div>
+      <div class="stat-card gold">
+        <div class="stat-label">Conversion Fees</div>
+        <div class="stat-value gold" style="font-size:20px">${totalFees>0?'S$'+totalFees.toFixed(2):'Free'}</div>
+        <div class="stat-sub">${plan.filter(p=>!p.freeConvert).length} paid session${plan.filter(p=>!p.freeConvert).length!==1?'s':''}</div>
+      </div>
+      <div class="stat-card ${canCover?'green':'red'}">
+        <div class="stat-label">Status</div>
+        <div class="stat-value ${canCover?'green':'red'}" style="font-size:16px;margin-top:4px">${canCover?'✅ Covered':'⚠ Short'}</div>
+        <div class="stat-sub">${canCover?'Ready to redeem':`Need ${shortfall.toLocaleString()} more`}</div>
+      </div>
+    </div>
+    <div class="section-header" style="margin-bottom:12px">
+      <div class="section-title"><span class="dot" style="background:var(--green)"></span>Conversion Plan</div>
+      <div style="font-size:11px;color:var(--text3)">KF balance → expiring → free → cheapest fee per session</div>
+    </div>
+    ${renderPlanTable(plan,shortfall,canCover)}
+  `;
+}
+
+function renderPlanTable(plan, shortfall, canCover){
+  return `<div class="table-wrap" style="margin-bottom:0">
+    <table><thead><tr>
+      <th>#</th><th>Who</th><th>Source</th><th>Why</th><th>Pts to Convert</th><th>Miles</th><th>Min Block</th><th>Fee</th><th>Time</th><th>Expiry</th>
+    </tr></thead><tbody>
+    ${plan.length ? plan.map((p,i)=>{
+      const expDays=p.expiry?getExpiryDaysRaw(p.expiry):null;
+      const expHtml=expDays!==null
+        ? `<span class="badge ${expDays<=90?'b-red':expDays<=180?'b-orange':'b-gray'}">${p.expiry} (${expDays}d)</span>`
+        : '<span style="color:var(--text3)">—</span>';
+      return `<tr>
+        <td><span class="badge b-blue" style="font-family:var(--mono)">#${i+1}</span></td>
+        <td style="color:${personColor(p.owner)};font-weight:600">${persons[p.owner]}</td>
+        <td>
+          <div style="font-weight:500">${p.label.split('·').slice(1).join('·').trim()}</div>
+          ${p.cards?`<div style="font-size:10px;color:var(--text3)">${p.cards}</div>`:''}
+        </td>
+        <td><span style="font-size:11px;color:${p.priorityReason?.includes('Expiring')?'var(--red)':p.priorityReason?.includes('Free')||p.priorityReason?.includes('converted')?'var(--green)':p.priorityReason?.includes('Last')?'var(--text3)':'var(--gold2)'}">${p.priorityReason||'—'}</span></td>
+        <td class="mono" style="color:var(--gold2)">${p.key==='KrisFlyer'?'—':p.ptsToConvert.toLocaleString()}</td>
+        <td class="mono" style="color:var(--accent2);font-weight:700">${p.actualMiles.toLocaleString()}</td>
+        <td style="font-size:11px;color:var(--text3)">${p.minMiles?(p.minMiles.toLocaleString()+' mi'):'—'}</td>
+        <td>${p.fee>0?`<span class="badge b-orange">S$${p.fee.toFixed(2)}</span>`:`<span class="badge b-green">Free</span>`}</td>
+        <td style="font-size:11px;color:var(--text3)">${p.time}</td>
+        <td>${expHtml}</td>
+      </tr>`;
+    }).join('') : '<tr><td colspan="10"><div class="empty">No convertible sources found.</div></td></tr>'}
+    ${!canCover?`<tr style="background:rgba(239,68,68,.05)">
+      <td colspan="10" style="padding:10px;font-size:12px;color:var(--red)">
+        ⚠ Short by <strong>${shortfall.toLocaleString()} miles</strong> after converting all available points.
+      </td>
+    </tr>`:''}
+    </tbody></table>
+  </div>`;
+}
+function populateOwnerSelect(defaultOwner){
+  const sel=document.getElementById('f-owner');
+  sel.innerHTML=persons.map((p,i)=>`<option value="${i}" ${i===defaultOwner?'selected':''}>${p}</option>`).join('');
+}
+
+function openAddCardForBank(bank, pi){
+  openAddCard(pi);
+  document.getElementById('f-bank').value=bank;
+}
+
+function openAddCard(defaultOwner=0){
+  editingId=null;
+  document.getElementById('modal-title').textContent='Add Credit Card';
+  ['f-name','f-bank','f-points','f-ratio','f-pool','f-validity','f-expiry','f-notes'].forEach(id=>{ document.getElementById(id).value=''; });
+  document.getElementById('f-feemonth').value='';
+  document.getElementById('f-status').value='active';
+  populateOwnerSelect(defaultOwner);
+  document.getElementById('card-modal').classList.add('open');
+}
+
+function openEditCard(id){
+  const c=allCards.find(c=>c.id===id); if(!c) return;
+  editingId=id;
+  document.getElementById('modal-title').textContent='Edit Card';
+  document.getElementById('f-bank').value=c.bank;
+  document.getElementById('f-name').value=c.name;
+  document.getElementById('f-points').value=c.points;
+  document.getElementById('f-ratio').value=c.ratio;
+  document.getElementById('f-pool').value=c.pool||'';
+  document.getElementById('f-validity').value=c.validity||'';
+  document.getElementById('f-expiry').value=c.expiry||'';
+  document.getElementById('f-feemonth').value=c.feemonth||'';
+  document.getElementById('f-status').value=c.status||'active';
+  document.getElementById('f-notes').value=c.notes||'';
+  populateOwnerSelect(c.owner);
+  document.getElementById('card-modal').classList.add('open');
+}
+
+function closeModal(){ document.getElementById('card-modal').classList.remove('open'); }
+
+async function saveCard(){
+  const name=document.getElementById('f-name').value.trim();
+  const bank=document.getElementById('f-bank').value.trim();
+  if(!name||!bank){ alert('Card name and bank are required.'); return; }
+  const card={
+    id: editingId||uid(),
+    owner: parseInt(document.getElementById('f-owner').value),
+    bank, name,
+    points: parseInt(document.getElementById('f-points').value)||0,
+    ratio: parseFloat(document.getElementById('f-ratio').value)||1,
+    pool: document.getElementById('f-pool').value.trim(),
+    validity: document.getElementById('f-validity').value,
+    expiry: document.getElementById('f-expiry').value,
+    feemonth: document.getElementById('f-feemonth').value,
+    status: document.getElementById('f-status').value,
+    notes: document.getElementById('f-notes').value,
+    lastUpdated: editingId ? allCards.find(c=>c.id===editingId)?.lastUpdated||'' : '',
+  };
+  if(editingId){ const idx=allCards.findIndex(c=>c.id===editingId); allCards[idx]=card; }
+  else allCards.push(card);
+  await saveCards();
+  closeModal();
+  renderMain();
+}
+
+async function deleteCard(id){
+  const c=allCards.find(c=>c.id===id);
+  if(!confirm(`Delete "${c?.name}"?`)) return;
+  allCards=allCards.filter(c=>c.id!==id);
+  await deleteCardFromDB(id);
+  renderMain();
+}
+
+function quickUpdatePoints(id,val){
+  const c=allCards.find(c=>c.id===id); if(!c) return;
+  c.points=parseInt(val)||0;
+  c.lastUpdated=new Date().toISOString().split('T')[0];
+  saveCards();
+  if(activeTab==='overview') renderMain();
+}
+
+function toggleExportMenu(){
+  const m=document.getElementById('export-menu');
+  m.style.display=m.style.display==='none'?'block':'none';
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#export-menu')&&!e.target.textContent.includes('Export'))
+    { const m=document.getElementById('export-menu'); if(m) m.style.display='none'; }
+});
+
+/* ═══════════════════════════════
+   EXPORT
+═══════════════════════════════ */
+function exportData(){
+  const rows=[
+    ['Person','Bank','Card','Points','Ratio (pts/mile)','Est Miles','Pool','Expiry','Fee Month','Status','Notes'],
+    ...allCards.map(c=>[persons[c.owner],c.bank,c.name,c.points,c.ratio,getMiles(c),c.pool||'',c.expiry||'',c.feemonth||'',c.status,c.notes||''])
+  ];
+  downloadCSV(rows, `krisflyer-cards-${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+async function exportHistory(){
+  // Fetch full history from Supabase (not just the 200 loaded in memory)
+  let rows=[['Month','Person','Bank','Card','Balance','Change','Notes']];
+  try {
+    const {data}=await sb.from('history').select('*').order('month',{ascending:true}).order('created_at',{ascending:true});
+    if(data&&data.length){
+      rows=[...rows,...data.map(h=>[
+        h.month, persons[h.owner]||h.owner, h.bank, h.card_name,
+        h.balance, h.change>=0?'+'+h.change:h.change, h.note||''
+      ])];
+    }
+  } catch(e){ alert('Could not fetch full history from database.'); return; }
+  downloadCSV(rows, `krisflyer-history-${new Date().toISOString().slice(0,10)}.csv`);
+}
+
+function downloadCSV(rows, filename){
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv'}));
+  a.download=filename;
+  a.click();
+}
+
+/* ═══════════════════════════════
+   INIT
+═══════════════════════════════ */
+(async()=>{
+  checkAuth();
+  // Show loading state
+  document.getElementById('main-content').innerHTML=`
+    <div style="display:flex;align-items:center;justify-content:center;height:300px;flex-direction:column;gap:12px">
+      <div style="font-size:28px">✈</div>
+      <div style="color:var(--text3);font-family:var(--mono);font-size:13px">Loading your miles data…</div>
+    </div>`;
+  await loadData();
+  renderPersonSwitcher();
+  renderMain();
+})();
+
+document.getElementById('card-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeModal(); });
+document.getElementById('person-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closePersonModal(); });
+document.getElementById('batch-modal').addEventListener('click',e=>{ if(e.target===e.currentTarget) closeBatchModal(); });
+</script>
+</body>
+</html>
